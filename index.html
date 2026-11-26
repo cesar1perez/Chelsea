@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Orb — Fase 2.6 · Órbita de letras: Chelsea</title>
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="orb-manifest.json">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; }
+  body {
+    display:flex; align-items:center; justify-content:center;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    touch-action:manipulation; user-select:none; -webkit-user-select:none;
+    color:#fff; background:#000; transition: background .4s ease;
+    cursor:pointer;
+  }
+  body[data-fondo="azul"] { background:#020a18; }
+  body[data-fondo="morado"] { background:#12081f; }
+  body[data-fondo="verde"] { background:#02120c; }
+  body[data-fondo="negro"] { background:#000; }
+  .ojos { display:flex; gap:8vw; align-items:center; transition: opacity .5s ease, transform .3s ease; }
+  .ojo {
+    width:32vw; height:32vw; max-width:340px; max-height:340px; min-width:130px; min-height:130px;
+    background:#eaf6ff; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 60px rgba(120,200,255,.35), 0 0 140px rgba(120,200,255,.12);
+    transition: transform .2s ease, height .2s ease, box-shadow .3s ease, opacity .5s ease;
+    overflow:hidden;
+  }
+  .pupila {
+    width:38%; height:52%; background:#0b1220; border-radius:50%;
+    transform: translate(var(--px,0px), var(--py,0px));
+    transition: transform .12s linear;
+    box-shadow: inset 0 0 0 6px rgba(120,200,255,.25);
+  }
+  .pupila::after { content:""; display:block; width:28%; height:28%; margin:18% 0 0 20%; background:#fff; border-radius:50%; opacity:.9; }
+  /* Estados por voz, sin botones */
+  body[data-estado="dormido"] .ojos, body[data-estado="reposo"] .ojos { opacity:.28; }
+  body[data-estado="dormido"] .ojo { height:5vw; max-height:36px; box-shadow:none; }
+  body[data-estado="atento"] .ojos { opacity:.65; }
+  body[data-estado="escuchando"] .ojos { opacity:1; transform:scale(1.04); }
+  body[data-estado="escuchando"] .ojo { box-shadow:0 0 90px rgba(120,255,170,.6), 0 0 180px rgba(120,255,170,.2); height:34vw; max-height:360px; }
+  body[data-estado="pensando"] .pupila { transform: translate(calc(var(--px,0px) + 16px), calc(var(--py,0px) - 12px)); }
+  body[data-estado="hablando"] .ojo { animation: hablar .45s ease-in-out infinite alternate; }
+  @keyframes hablar { from { transform: scale(1); } to { transform: scale(1.04, .96); } }
+  body[data-estado="aviso"] .ojo { box-shadow:0 0 90px rgba(255,210,90,.65), 0 0 180px rgba(255,210,90,.2); }
+  body.parpadeo .ojo { height:3vw; max-height:26px; }
+  /* Caras bizarras */
+  body[data-cara="alien"] .ojo { background:#d8ffd8; border-radius:50% 50% 50% 50% / 62% 62% 38% 38%; box-shadow:0 0 70px rgba(80,255,140,.5); }
+  body[data-cara="alien"] .pupila { width:12%; height:72%; background:#02120a; box-shadow:0 0 12px rgba(80,255,140,.8); }
+  body[data-cara="alien"] .pupila::after { display:none; }
+  body[data-cara="glitch"] .ojo { box-shadow:-6px 0 0 rgba(255,0,90,.7), 6px 0 0 rgba(0,220,255,.7), 0 0 60px rgba(255,0,120,.35); border-radius:42% 58% 55% 45% / 48% 42% 58% 52%; }
+  body[data-cara="glitch"] .ojo:first-child { width:36vw; height:26vw; transform:rotate(-7deg); }
+  body[data-cara="glitch"] .ojo:last-child { width:26vw; height:36vw; transform:rotate(6deg); }
+  body[data-cara="glitch"] .pupila { width:46%; height:46%; background:#ff005a; box-shadow:inset 0 0 0 5px #00dcff; }
+  body[data-cara="espiral"] .ojo { background:#fff7e6; box-shadow:0 0 70px rgba(255,180,60,.45); }
+  body[data-cara="espiral"] .pupila { width:62%; height:62%; background:repeating-conic-gradient(#0b1220 0 22deg, #ffb43c 22deg 44deg); animation:girar 6s linear infinite; }
+  body[data-cara="espiral"] .pupila::after { display:none; }
+  @keyframes girar { to { transform:translate(var(--px,0px), var(--py,0px)) rotate(360deg); } }
+  body[data-cara="robot"] .ojo { border-radius:16px; background:#0b1524; border:3px solid #7be3ff; box-shadow:0 0 50px rgba(123,227,255,.4); }
+  body[data-cara="robot"] .pupila { width:56%; height:26%; border-radius:4px; background:#7be3ff; box-shadow:0 0 18px #7be3ff; }
+  body[data-cara="robot"] .pupila::after { display:none; }
+  /* Fase 2.6 — Cara "Órbita de letras": un solo canvas a pantalla completa.
+     La cara vive en el canvas; los ojos se ocultan solo con esta cara. */
+  #orbita { display:none; position:fixed; inset:0; width:100vw; height:100vh; }
+  body[data-cara="orbita"] #orbita { display:block; }
+  body[data-cara="orbita"] .ojos { display:none; }
+  body[data-cara="orbita"] #despertar { color:rgba(190,255,220,.6); }
+  /* Pulido 2.6b: con Órbita, la frase de abajo también es monoespaciada
+     y con tracking, como las letras del canvas. */
+  body[data-cara="orbita"] #frase { font-family:ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace; letter-spacing:.05em; }
+  #frase {
+    position:fixed; left:0; right:0; bottom:9vh; text-align:center;
+    color:rgba(255,255,255,.75); font-size:16px; line-height:1.4; padding:0 20px;
+    opacity:0; transition:opacity .4s ease; pointer-events:none;
+  }
+  #frase.visible { opacity:1; }
+  #frase small { display:block; color:rgba(255,255,255,.45); font-size:13px; margin-top:4px; }
+  #despertar {
+    position:fixed; left:0; right:0; bottom:4vh; text-align:center;
+    color:rgba(255,255,255,.55); font-size:14px; pointer-events:none;
+  }
+  #menuBtn {
+    position:fixed; top:14px; right:16px; z-index:10;
+    background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.18);
+    width:44px; height:44px; border-radius:50%; font-size:22px; cursor:pointer;
+  }
+  #panel {
+    display:none; position:fixed; left:12px; right:12px; bottom:12px; top:16%;
+    background:#0b1524; border:1px solid rgba(120,200,255,.35); border-radius:14px;
+    padding:16px; overflow:auto; z-index:20; text-align:left; cursor:default;
+  }
+  #panel.abierto { display:block; }
+  #panel h2 { font-size:17px; margin-bottom:6px; }
+  #panel h3 { font-size:14px; margin:14px 0 6px; color:#9fd8ff; }
+  #panel p, #panel li { font-size:14px; line-height:1.5; color:#dbeafe; }
+  #panel ul { padding-left:18px; }
+  #panel button {
+    background:#12233a; color:#eaf6ff; border:1px solid rgba(120,200,255,.4);
+    border-radius:999px; padding:9px 13px; font-size:14px; cursor:pointer; margin:3px 4px 3px 0;
+  }
+  #panel button.activo { background:#1d5c38; border-color:#7be3a8; }
+  #panel button.peligro { background:transparent; border-color:rgba(255,120,120,.5); color:#ffb3b3; }
+  #panel .cerrar { float:right; }
+  #panel select, #panel input[type="range"], #panel input[type="text"], #panel input[type="url"] { width:100%; margin:6px 0; background:#12233a; color:#eaf6ff; border:1px solid rgba(120,200,255,.4); border-radius:8px; padding:9px; font-size:14px; }
+</style>
+</head>
+<body data-estado="dormido" data-cara="orbita" data-fondo="negro">
+  <div class="ojos" id="ojos" aria-label="Ojos del Orb">
+    <div class="ojo"><div class="pupila"></div></div>
+    <div class="ojo"><div class="pupila"></div></div>
+  </div>
+  <canvas id="orbita" aria-label="Órbita de letras de Chelsea"></canvas>
+  <div id="frase"></div>
+  <div id="despertar">Toca la pantalla una vez para despertarme.<br>Después ya no tocas nada, solo háblame.</div>
+  <button id="menuBtn" aria-label="Configuración">⋮</button>
+  <div id="panel">
+    <button class="cerrar" id="btnCerrar">Cerrar ✕</button>
+    <h2>Configuración</h2>
+    <p>Solo Chelsea en pantalla. La escucha es continua con la app abierta. Sin botones para hablar.</p>
+    <h3>Cara del Orb</h3>
+    <div id="caras">
+      <button data-cara="orbita" class="activo">🛰 Órbita</button>
+      <button data-cara="clasico">Clásico</button>
+      <button data-cara="alien">👽 Alien</button>
+      <button data-cara="glitch">🌀 Glitch</button>
+      <button data-cara="espiral">🌀 Espiral</button>
+      <button data-cara="robot">🤖 Robot</button>
+    </div>
+    <h3>Color de fondo</h3>
+    <div id="fondos">
+      <button data-fondo="negro" class="activo">Negro</button>
+      <button data-fondo="azul">Azul oscuro</button>
+      <button data-fondo="morado">Morado</button>
+      <button data-fondo="verde">Verde oscuro</button>
+    </div>
+    <h3>Voz del Orb</h3>
+    <p>Estas son las voces reales de este aparato. En tu Galaxy son las de Google, en PC son las de Windows / Chrome. Prueba y quédate con la que te guste.</p>
+    <select id="vozSelect"><option>Cargando voces…</option></select>
+    <label style="font-size:13px; color:rgba(255,255,255,.65);">Velocidad: <span id="velValor">0.95</span></label>
+    <input type="range" id="velRango" min="0.7" max="1.3" step="0.05" value="0.95">
+    <button id="btnProbarVoz">🔊 Probar esta voz</button>
+    <p style="color:rgba(255,255,255,.55);">La voz natural tipo Gemini / Grok no vive en el HTML. Es una voz neuronal de nube y va en la Fase 2, con internet y costo por uso. Esta de aquí es gratis y funciona hoy.</p>
+    <h3>🧠 Cerebro (Fase 2)</h3>
+    <p>Sin cerebro, el Orb platica con respuestas locales y guarda tus comandos. Con cerebro conectado, lo que no sea un comando va al cerebro, que te conoce por tu registro. La clave de API <b>nunca</b> va aquí ni en GitHub: vive en tu servidor intermediario.</p>
+    <input type="url" id="cerebroUrl" placeholder="https://tu-servidor/responder">
+    <button id="btnProbarCerebro">🔌 Probar conexión</button>
+    <p id="estadoCerebro" style="color:rgba(255,255,255,.55);">Cerebro: no conectado. Sin él, platico con respuestas locales.</p>
+    <h3>📊 Mi Sheet (Google Sheets)</h3>
+    <p>Pega aquí la URL de tu Apps Script que termina en <b>/exec</b>. Queda guardada solo en este aparato, nunca en el HTML ni en GitHub. Sin ella, todo queda solo en este aparato. Con ella, cada gasto, nota y recordatorio se copia a tu Sheet en segundo plano, sin esperar respuesta.</p>
+    <input type="url" id="sheetsUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    <button id="btnProbarSheets">📊 Probar Sheets</button>
+    <p id="estadoSheets" style="color:rgba(255,255,255,.55);">Sheets: no conectado. Todo queda solo en este aparato.</p>
+    <h3>Escucha</h3>
+    <button id="btnPausa">⏸ Pausar escucha</button>
+    <p id="estadoEscucha">Escucha: apagada hasta que toques los ojos.</p>
+    <h3>⏰ Recordatorios con hora (Fase 2.4)</h3>
+    <p>Dile: <b>“recuérdame en 5 minutos que…”</b>, <b>“recuérdame a las 3 de la tarde que…”</b>, <b>“recuérdame mañana a las 9 que…”</b> o <b>“recuérdame todos los días a las 9 que tomes agua”</b> (se repite solo cada día). También pregúntame <b>“¿cómo voy hoy?”</b> y te digo tus gastos, recordatorios y notas del día. El Orb te lo dice con voz cuando llega la hora y además te deja el aviso en las notificaciones del sistema, para que no se pierda si la pantalla se apaga o cambias de app un momento. <b>La voz sigue sonando solo con la app abierta</b>: con la app cerrada del todo, Android no deja que una página web hable sola. El recordatorio queda también en tu registro y en tu Sheet, como agenda.</p>
+    <button id="btnAvisos">🔔 Activar avisos del sistema</button>
+    <p id="estadoAvisos" style="color:rgba(255,255,255,.55);">Avisos del sistema: sin activar.</p>
+    <button id="btnVerAlarmas">⏰ Ver recordatorios</button>
+    <ul id="listaAlarmas"></ul>
+    <h3>💰 Ingresos y reportes (Fase 2.5)</h3>
+    <p>Dile: <b>“registra un ingreso de 5000 de sueldo”</b> o <b>“me pagaron 2000 de freelance”</b>. Y pide <b>“reporte de la semana”</b>, <b>“reporte del mes”</b> o <b>“reporte del año”</b>: te dice ingresos, gastos, balance y tu gasto más grande de ese periodo. Solo lee lo que registraste, no inventa nada. Todo va también a tu Sheet si la tienes conectada.</p>
+    <h3>📅 Citas y tareas (Fase 2.5)</h3>
+    <p>Dile: <b>“agenda una cita el viernes a las 10 con el doctor”</b> — queda con alarma y aviso como un recordatorio, y sale en ⏰ Ver recordatorios marcada como cita. <b>“anota la tarea llamar al banco”</b> (con hora también le pone alarma). Pregunta <b>“¿qué tareas tengo pendientes?”</b> y <b>“¿qué citas tengo hoy?”</b>, y di <b>“completa la tarea llamar al banco”</b>.</p>
+    <h3>💡 Ideas y proyectos (Fase 2.5)</h3>
+    <p>Dile: <b>“guarda la idea abrir una tienda en línea”</b>, <b>“crea el proyecto tienda en línea”</b>, <b>“avance del proyecto tienda en línea: ya tengo el logo”</b> y <b>“¿cómo va el proyecto tienda en línea?”</b>. Pregunta <b>“¿qué ideas tengo?”</b> y <b>“¿qué proyectos tengo?”</b>. También puedes pausar, terminar o reactivar un proyecto con voz.</p>
+    <h3>🧭 Mi FODA (Fase 2.5)</h3>
+    <p>Dile: <b>“empezar mi FODA”</b> y te hago dos preguntas cortas por cada parte — fortalezas, debilidades, oportunidades, amenazas — una a la vez, y guardo cada respuesta. <b>“dime mi FODA”</b> te lo lee. También: <b>“agrega a mi FODA una fortaleza: sé vender”</b>. Sin cerebro, esto es una entrevista guiada local, no un análisis automático de tu conversación.</p>
+    <h3>Mi registro y mi charla</h3>
+    <button id="btnVer">📋 Ver registro</button>
+    <button id="btnExportar">⬇ Exportar registro</button>
+    <button id="btnExportarChat">💬 Exportar chat</button>
+    <ul id="lista"></ul>
+    <p style="margin-top:10px;"><button class="peligro" id="btnBorrar">Borrar todo</button></p>
+    <p style="margin-top:12px; color:rgba(255,255,255,.55);">La voz de Chrome necesita internet. La cara y el guardado local funcionan sin internet. Con cerebro conectado, la charla fluida también necesita internet. Los recordatorios con hora suenan con la app abierta y además dejan un aviso en tus notificaciones. Los diarios se repiten solos cada día a la misma hora, y se cancelan diciendo “cancela mis recordatorios diarios”.</p>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+  /* Configuración: pega aquí tu URL de Apps Script /exec cuando la tengas.
+     Sin ella, todo queda solo en este aparato y se sincroniza al Sheet
+     en segundo plano cuando la pegues. */
+  /* Sheets: la URL /exec se escribe en Configuración (⋮ → Mi Sheet) y se
+     guarda solo en este aparato, nunca en el HTML ni en GitHub.
+     Vacía = todo queda solo en este aparato. Antes había que editar
+     este archivo a mano para pegarla; en la 2.1 ya no. */
+  var CLAVE_SHEETS = "orb_apps_script_url_v1";
+  var APPS_SCRIPT_URL = "";
+  try { APPS_SCRIPT_URL = localStorage.getItem(CLAVE_SHEETS) || ""; } catch (e) {}
+  /* Fase 2 — Cerebro: URL de TU servidor intermediario (el que guarda la
+     clave de API). Se escribe en Configuración, se guarda solo en este
+     aparato y nunca se sube a GitHub. Vacía = charla local. */
+  var CLAVE_CEREBRO = "orb_cerebro_url_v1";
+  var cerebroURL = "";
+  try { cerebroURL = localStorage.getItem(CLAVE_CEREBRO) || ""; } catch (e) {}
+  var fraseEl = document.getElementById("frase"), despertarEl = document.getElementById("despertar"),
+      panel = document.getElementById("panel"), lista = document.getElementById("lista"),
+      estadoEscuchaEl = document.getElementById("estadoEscucha"),
+      btnPausa = document.getElementById("btnPausa");
+  var activo = false, escuchando = false, reconocimiento = null, hablando = false,
+      timerSilencio = null, timerFrase = null, despertarHecho = false;
+
+  var CLAVE = "orb_registro_v1", CLAVE_CHARLA = "orb_charla_v1", CLAVE_PENDIENTES = "orb_pendientes_apps_script_v1", CLAVE_ALARMAS = "orb_alarmas_v1";
+  /* Fase 2.5 — claves NUEVAS (las viejas no se tocan, nada guardado se pierde):
+     tareas, ideas+proyectos y FODA. Citas usan orb_alarmas_v1 con tipo "cita". */
+  var CLAVE_TAREAS = "orb_tareas_v1", CLAVE_IDEAS = "orb_ideas_proyectos_v1", CLAVE_FODA = "orb_foda_v1";
+  function cargarObj(c, def) { try { var v = JSON.parse(localStorage.getItem(c) || "null"); return (v && typeof v === "object") ? v : def; } catch (e) { return def; } }
+  function guardarObj(c, v) { try { localStorage.setItem(c, JSON.stringify(v)); } catch (e) {} }
+  function cargarTareas() { var t = cargar(CLAVE_TAREAS); return Array.isArray(t) ? t : []; }
+  function cargarIdeas() { var d = cargarObj(CLAVE_IDEAS, null); return (d && Array.isArray(d.ideas) && Array.isArray(d.proyectos)) ? d : { ideas: [], proyectos: [] }; }
+  function cargarFoda() { var f = cargarObj(CLAVE_FODA, null); return (f && Array.isArray(f.fortalezas)) ? f : { fortalezas: [], debilidades: [], oportunidades: [], amenazas: [] }; }
+  function cargar(c) { try { return JSON.parse(localStorage.getItem(c) || "[]"); } catch (e) { return []; } }
+  function guardar(c, a) { try { localStorage.setItem(c, JSON.stringify(a)); } catch (e) {} }
+  function hoyISO() { return new Date().toISOString(); }
+  function fechaCorta(iso) { try { return new Date(iso).toLocaleString("es-MX", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" }); } catch (e) { return iso; } }
+
+  function mostrarEstado(n) { document.body.setAttribute("data-estado", n); if (typeof orbitaEstado === "function") orbitaEstado(n); }
+  function mostrarFrase(txt, sub) {
+    fraseEl.innerHTML = txt.replace(/</g, "&lt;") + (sub ? "<small>" + sub.replace(/</g, "&lt;") + "</small>" : "");
+    fraseEl.classList.add("visible");
+    clearTimeout(timerFrase);
+    timerFrase = setTimeout(function(){ fraseEl.classList.remove("visible"); }, 6000);
+  }
+
+  /* Fase 2.6 — Cara "Órbita de letras" de Chelsea. Un anillo de glifos
+     (letras, dígitos y caracteres en español) orbita alrededor de un
+     núcleo con la C de Chelsea, que late como un corazón. Despacio y
+     tenue en reposo; se enciende y gira más rápido mientras Cesar habla;
+     cuando Chelsea responde, los glifos se alinean formando su frase,
+     letra por letra, y al terminar vuelven a orbitar. En aviso (un
+     recordatorio sonando) el núcleo se vuelve ámbar y late más rápido.
+     Un solo <canvas>, barato en batería: el bucle se pausa si la pestaña
+     se oculta (visibilitychange) y se reanuda al volver.
+     Pulido 2.6b: entrada con los glifos volando desde los bordes,
+     movimiento con easing, glow en el núcleo y en los glifos más
+     brillantes, latido doble del núcleo, polvo de estrellas detrás del
+     anillo y frase con fundido letra por letra. */
+  var orbitaCanvas = document.getElementById("orbita");
+  var orbitaCtx = orbitaCanvas ? orbitaCanvas.getContext("2d") : null;
+  var ORBITA_LETRAS = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ0123456789áéíóú¿¡§∞◊";
+  var orbitaGlyphs = [], orbitaAngulo = 0, orbitaVel = 0.05, orbitaVelObj = 0.05,
+      orbitaBrillo = 0.3, orbitaBrilloObj = 0.3, orbitaAmbar = false,
+      orbitaHablaTxt = "", orbitaHablaIni = 0, orbitaHablando = false,
+      orbitaDesvan = 0, orbitaImpulso = 0, orbitaRaf = null, orbitaUltimo = 0,
+      orbitaAncho = 0, orbitaAlto = 0,
+      /* Pulido 2.6b: polvo de estrellas detrás del anillo (~40 puntitos
+         tenues a la deriva) y animación de entrada: los glifos vuelan
+         desde los bordes y se acomodan en el anillo en ~1.2 s. */
+      orbitaPolvo = [], orbitaIntroIni = 0, orbitaIntroDur = 1200;
+  function orbitaEsCara() { return document.body.getAttribute("data-cara") === "orbita"; }
+  function orbitaCrearGlyphs() {
+    orbitaGlyphs = [];
+    for (var i = 0; i < 64; i++) {
+      orbitaGlyphs.push({
+        a: (i / 64) * Math.PI * 2,
+        rf: 0.9 + Math.random() * 0.2,
+        c: ORBITA_LETRAS[Math.floor(Math.random() * ORBITA_LETRAS.length)],
+        s: 13 + Math.random() * 7,
+        fase: Math.random() * Math.PI * 2,
+        px: undefined, py: undefined, sx: 0, sy: 0
+      });
+    }
+    /* Polvo de estrellas: ~40 puntitos tenues detrás del anillo, a la
+       deriva. Posiciones relativas (0..1) para que sobrevivan a un resize. */
+    orbitaPolvo = [];
+    for (var j = 0; j < 40; j++) {
+      orbitaPolvo.push({
+        x: Math.random(), y: Math.random(),
+        r: 0.6 + Math.random() * 1.4,
+        vx: (Math.random() - 0.5) * 0.004, vy: (Math.random() - 0.5) * 0.003,
+        a: 0.04 + Math.random() * 0.09, fase: Math.random() * Math.PI * 2
+      });
+    }
+  }
+  /* Entrada 2.6b: cada glifo nace en un borde de la pantalla (fuera de
+     vista) y vuela hasta su lugar en el anillo. Se repite al cambiar de
+     cara a Órbita, no al volver de una pestaña oculta. */
+  function orbitaReiniciarIntro() {
+    var ahora = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+    orbitaIntroIni = ahora;
+    orbitaGlyphs.forEach(function(g) {
+      var borde = Math.floor(Math.random() * 4);
+      if (borde === 0) { g.sx = -40; g.sy = Math.random() * orbitaAlto; }
+      else if (borde === 1) { g.sx = orbitaAncho + 40; g.sy = Math.random() * orbitaAlto; }
+      else if (borde === 2) { g.sx = Math.random() * orbitaAncho; g.sy = -40; }
+      else { g.sx = Math.random() * orbitaAncho; g.sy = orbitaAlto + 40; }
+      g.px = g.sx; g.py = g.sy;
+    });
+  }
+  function orbitaRedimensionar() {
+    if (!orbitaCanvas || !orbitaCtx) return;
+    var dpr = window.devicePixelRatio || 1;
+    orbitaAncho = window.innerWidth; orbitaAlto = window.innerHeight;
+    orbitaCanvas.width = Math.round(orbitaAncho * dpr);
+    orbitaCanvas.height = Math.round(orbitaAlto * dpr);
+    orbitaCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function orbitaEstado(n) {
+    if (n === "escuchando") { orbitaVelObj = 0.55; orbitaBrilloObj = 1; orbitaAmbar = false; }
+    else if (n === "aviso") { orbitaVelObj = 0.3; orbitaBrilloObj = 0.95; orbitaAmbar = true; }
+    else if (n === "hablando") { orbitaVelObj = 0.18; orbitaBrilloObj = 0.85; orbitaAmbar = false; }
+    else if (n === "pensando") { orbitaVelObj = 0.25; orbitaBrilloObj = 0.7; orbitaAmbar = false; }
+    else if (n === "atento") { orbitaVelObj = 0.12; orbitaBrilloObj = 0.55; orbitaAmbar = false; }
+    else { orbitaVelObj = 0.05; orbitaBrilloObj = 0.3; orbitaAmbar = false; }
+  }
+  function orbitaDecir(txt) {
+    orbitaHablaTxt = txt || "";
+    orbitaHablaIni = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+    orbitaHablando = true; orbitaDesvan = 0;
+  }
+  function orbitaFinHablar() {
+    orbitaHablando = false;
+    if (orbitaHablaTxt) orbitaDesvan = 1;
+  }
+  function orbitaLineas(txt, maxAncho) {
+    var palabras = String(txt).split(/\s+/), lineas = [], cur = "";
+    palabras.forEach(function(p) {
+      var prueba = cur ? cur + " " + p : p;
+      if (prueba.length <= maxAncho) cur = prueba;
+      else { if (cur) lineas.push(cur); cur = p; }
+    });
+    if (cur) lineas.push(cur);
+    return lineas;
+  }
+  function orbitaDibujar(t) {
+    orbitaRaf = null;
+    if (!orbitaEsCara() || !orbitaCtx) return;
+    var dt = orbitaUltimo ? Math.min(0.05, (t - orbitaUltimo) / 1000) : 0.016;
+    orbitaUltimo = t;
+    /* Pulido 2.6b: velocidad y brillo llegan a su objetivo con easing
+       (lerp), no de golpe; el anillo además respira despacio. */
+    orbitaVel += (orbitaVelObj - orbitaVel) * 0.06;
+    orbitaBrillo += (orbitaBrilloObj - orbitaBrillo) * 0.06;
+    if (orbitaImpulso > 0) orbitaImpulso = Math.max(0, orbitaImpulso - dt * 0.8);
+    orbitaAngulo += (orbitaVel + orbitaImpulso * 0.9) * dt;
+    if (orbitaDesvan > 0) orbitaDesvan = Math.max(0, orbitaDesvan - dt * 1.2);
+    /* Entrada: 0 → 1 en ~1.2 s con easing cúbico; los glifos vuelan
+       desde los bordes y se acomodan en el anillo. */
+    var introT = Math.min(1, Math.max(0, (t - orbitaIntroIni) / orbitaIntroDur));
+    var introE = 1 - Math.pow(1 - introT, 3);
+    var cx = orbitaAncho / 2, cy = orbitaAlto / 2;
+    var radio = Math.min(orbitaAncho, orbitaAlto) * 0.32 * (1 + 0.015 * Math.sin(t / 1600));
+    var ctx = orbitaCtx;
+    ctx.clearRect(0, 0, orbitaAncho, orbitaAlto);
+    var estado = document.body.getAttribute("data-estado");
+    /* Polvo de estrellas: puntitos tenues a la deriva detrás del anillo. */
+    var i, j;
+    for (j = 0; j < orbitaPolvo.length; j++) {
+      var d = orbitaPolvo[j];
+      d.x += d.vx * dt; d.y += d.vy * dt;
+      if (d.x < 0) d.x += 1; if (d.x > 1) d.x -= 1;
+      if (d.y < 0) d.y += 1; if (d.y > 1) d.y -= 1;
+      ctx.fillStyle = "rgba(200,255,225," + (d.a * (0.6 + 0.4 * Math.sin(t / 800 + d.fase))).toFixed(3) + ")";
+      ctx.beginPath(); ctx.arc(d.x * orbitaAncho, d.y * orbitaAlto, d.r, 0, Math.PI * 2); ctx.fill();
+    }
+    /* Texto hablado: posiciones de cada letra revelada, para que los
+       glifos se alineen formando la frase. Máximo 3 líneas: si la
+       respuesta es larga, las primeras se van desplazando. Cada letra
+       nace con un fundido (al) y las líneas viejas se atenúan. */
+    var hablando = orbitaHablando || orbitaDesvan > 0;
+    var tamLetra = Math.max(16, Math.min(24, orbitaAncho * 0.045));
+    var anchoChar = tamLetra * 0.62;
+    var maxAncho = Math.max(10, Math.floor(orbitaAncho * 0.86 / anchoChar));
+    var posTexto = [];
+    if (hablando && orbitaHablaTxt) {
+      var seg = (t - orbitaHablaIni) / 1000;
+      var rev = orbitaHablando ? Math.min(orbitaHablaTxt.length, Math.floor(seg * 14) + 1) : orbitaHablaTxt.length;
+      var todas = orbitaLineas(orbitaHablaTxt, maxAncho);
+      var offs = [], off = 0;
+      todas.forEach(function(l) { offs.push(off); off += l.length + 1; });
+      var act = [];
+      todas.forEach(function(l, li) { if (offs[li] < rev) act.push(li); });
+      if (act.length > 3) act = act.slice(-3);
+      act.forEach(function(li, k) {
+        var l = todas[li], y = cy + (k - (act.length - 1) / 2) * tamLetra * 1.6;
+        var lineaVieja = (k < act.length - 1) ? 0.55 : 1;
+        for (j = 0; j < l.length; j++) {
+          if (offs[li] + j >= rev) break;
+          var edad = seg - (offs[li] + j) / 14;
+          var al = Math.min(1, Math.max(0, edad * 5)) * lineaVieja;
+          posTexto.push({ x: cx + (j - (l.length - 1) / 2) * anchoChar, y: y, c: l[j], al: al });
+        }
+      });
+    }
+    /* Núcleo con la C de Chelsea: latido doble (lub-dub), despacio en
+       reposo y más rápido en aviso; se atenúa mientras la frase ocupa
+       el centro. Brillo suave (shadowBlur) solo en el núcleo. */
+    var cicloMs = estado === "aviso" ? 550 : 1100;
+    var ciclo = ((((t % cicloMs) + cicloMs) % cicloMs) / cicloMs);
+    var latido = Math.exp(-7 * ciclo) + 0.55 * Math.exp(-7 * Math.max(0, ciclo - 0.22));
+    var pulso = 1 + 0.09 * latido;
+    var rNucleo = Math.max(26, Math.min(orbitaAncho, orbitaAlto) * 0.055) * pulso;
+    var colorNucleo = orbitaAmbar ? "255,190,80" : "150,255,200";
+    var alfaNucleo = hablando ? 0.4 : 1;
+    ctx.save();
+    ctx.shadowColor = "rgba(" + colorNucleo + ",0.8)";
+    ctx.shadowBlur = 28 * orbitaBrillo;
+    ctx.globalAlpha = (0.25 * orbitaBrillo + 0.1) * alfaNucleo;
+    ctx.fillStyle = "rgb(" + colorNucleo + ")";
+    ctx.beginPath(); ctx.arc(cx, cy, rNucleo * 2.1, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 0.9 * alfaNucleo;
+    ctx.beginPath(); ctx.arc(cx, cy, rNucleo, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = alfaNucleo;
+    ctx.fillStyle = "#02120c";
+    ctx.font = "bold " + Math.round(rNucleo * 1.1) + "px system-ui, sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("C", cx, cy + 1);
+    ctx.restore();
+    /* Glifos: orbitan; cuando Chelsea habla, cada uno vuela a su lugar
+       en la frase y muestra esa letra; al terminar, vuelven a orbitar.
+       Durante la entrada, vuelan desde su borde hasta el anillo. */
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    for (i = 0; i < orbitaGlyphs.length; i++) {
+      var g = orbitaGlyphs[i];
+      var ang = g.a + orbitaAngulo;
+      var rr = radio * g.rf * (1 + 0.04 * Math.sin(t / 900 + g.fase));
+      var ox = cx + Math.cos(ang) * rr, oy = cy + Math.sin(ang) * rr;
+      var tx = ox, ty = oy, tc = g.c;
+      var ta = orbitaBrillo * (0.5 + 0.5 * Math.sin(t / 700 + g.fase));
+      if (introT < 1) {
+        tx = g.sx + (ox - g.sx) * introE;
+        ty = g.sy + (oy - g.sy) * introE;
+        ta *= (0.15 + 0.85 * introE);
+      }
+      if (i < posTexto.length) {
+        var p = posTexto[i];
+        tx = p.x; ty = p.y; tc = p.c;
+        ta = orbitaHablando ? 0.95 * p.al : 0.95 * orbitaDesvan * p.al;
+        if (orbitaDesvan > 0 && !orbitaHablando) { tx = ox; ty = oy; }
+      } else if (posTexto.length) {
+        ta *= 0.25;
+      }
+      if (g.px === undefined) { g.px = tx; g.py = ty; }
+      g.px += (tx - g.px) * 0.12; g.py += (ty - g.py) * 0.12;
+      ctx.font = g.s + "px ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace";
+      ctx.fillStyle = orbitaAmbar ? "rgba(255,205,110," + ta.toFixed(3) + ")" : "rgba(185,255,220," + ta.toFixed(3) + ")";
+      /* Solo los glifos más brillantes llevan glow: barato y se nota. */
+      if (ta > 0.8) { ctx.shadowColor = orbitaAmbar ? "rgba(255,205,110,0.9)" : "rgba(185,255,220,0.9)"; ctx.shadowBlur = 14; }
+      else ctx.shadowBlur = 0;
+      ctx.fillText(tc, g.px, g.py);
+    }
+    ctx.shadowBlur = 0;
+  }
+  function orbitaTick(t) {
+    orbitaDibujar(t);
+    if (orbitaEsCara() && !document.hidden) orbitaRaf = requestAnimationFrame(orbitaTick);
+  }
+  function orbitaArrancar(repetirIntro) {
+    if (!orbitaEsCara() || orbitaRaf !== null || !orbitaCtx) return;
+    orbitaUltimo = 0;
+    /* La entrada solo se repite al abrir la cara (primera vez o al
+       cambiar a Órbita en ⋮); al volver de una pestaña oculta no, para
+       no marear. */
+    if (repetirIntro) orbitaReiniciarIntro();
+    orbitaRaf = requestAnimationFrame(orbitaTick);
+  }
+  function orbitaParar() {
+    if (orbitaRaf !== null) { try { cancelAnimationFrame(orbitaRaf); } catch (e) {} orbitaRaf = null; }
+    if (orbitaCtx) orbitaCtx.clearRect(0, 0, orbitaAncho, orbitaAlto);
+  }
+  function actualizarCaraOrbita() {
+    if (orbitaEsCara()) { orbitaRedimensionar(); orbitaArrancar(true); } else orbitaParar();
+  }
+  /* El bucle se pausa con la pestaña oculta (batería) y vuelve al mostrarse. */
+  document.addEventListener("visibilitychange", function() {
+    if (document.hidden) orbitaParar();
+    else if (orbitaEsCara()) orbitaArrancar(false);
+  });
+  window.addEventListener("resize", function() { if (orbitaEsCara()) orbitaRedimensionar(); });
+  /* Tocar el canvas despierta igual que tocaban los ojos; el toque además
+     le da un giro extra al anillo, como un guiño. */
+  if (orbitaCanvas) orbitaCanvas.addEventListener("pointerdown", function() {
+    orbitaImpulso = 1;
+    despertar();
+  });
+  orbitaCrearGlyphs();
+  orbitaRedimensionar();
+  actualizarCaraOrbita();
+
+  var vozElegida = null, velocidad = 0.95;
+  try {
+    velocidad = parseFloat(localStorage.getItem("orb_velocidad_v1") || "0.95") || 0.95;
+    vozElegida = localStorage.getItem("orb_voz_v1") || null;
+  } catch (e) {}
+  function aplicarVoz(u) {
+    if (!u) return;
+    var lista = [];
+    try { lista = speechSynthesis.getVoices() || []; } catch (e) {}
+    // Preferir la elegida por nombre, si no la primera en español
+    var v = lista.find(function(x){ return x.name === vozElegida; })
+      || lista.find(function(x){ return (x.lang || "").toLowerCase().indexOf("es-mx") === 0; })
+      || lista.find(function(x){ return (x.lang || "").toLowerCase().indexOf("es") === 0; })
+      || lista[0];
+    if (v) u.voice = v;
+  }
+  function decir(frase) {
+    mostrarFrase(frase);
+    mostrarEstado("hablando");
+    hablando = true;
+    orbitaDecir(frase);
+    try {
+      var voz = new SpeechSynthesisUtterance(frase);
+      voz.lang = "es-MX"; voz.rate = velocidad;
+      aplicarVoz(voz);
+      voz.onend = function(){ hablando = false; orbitaFinHablar(); mostrarEstado(activo ? "atento" : "dormido"); programarApagado(); };
+      speechSynthesis.cancel();
+      speechSynthesis.speak(voz);
+    } catch (e) { hablando = false; orbitaFinHablar(); mostrarEstado("atento"); }
+  }
+  function programarApagado() {
+    clearTimeout(timerSilencio);
+    timerSilencio = setTimeout(function(){
+      if (!hablando) mostrarEstado("dormido");
+    }, 4500);
+  }
+  /* Envío a Sheets en segundo plano. Con mode no-cors el navegador no
+     puede confirmar si la fila llegó: por eso el Orb no promete éxito,
+     solo lo intenta, y la confirmación real es abrir el Sheet. */
+  function enviarASheets(e) {
+    if (!APPS_SCRIPT_URL) return;
+    try {
+      fetch(APPS_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(e) })
+        .catch(function(){ var p = cargar(CLAVE_PENDIENTES); p.push(e); guardar(CLAVE_PENDIENTES, p); });
+    } catch (err) { var p2 = cargar(CLAVE_PENDIENTES); p2.push(e); guardar(CLAVE_PENDIENTES, p2); }
+  }
+  /* Reenvía lo que quedó en cola (por ejemplo, lo anotado antes de pegar
+     la URL de Sheets). Se intenta una vez por entrada y se vacía la cola;
+     si una fila no llegó, se ve al abrir el Sheet, no en el Orb. */
+  function reenviarPendientes() {
+    if (!APPS_SCRIPT_URL) return 0;
+    var p = cargar(CLAVE_PENDIENTES);
+    if (!p.length) return 0;
+    guardar(CLAVE_PENDIENTES, []);
+    p.forEach(function(e){ enviarASheets(e); });
+    return p.length;
+  }
+  function guardarEntrada(tipo, contenido, monto, detalle) {
+    var r = cargar(CLAVE);
+    var e = { fecha: hoyISO(), tipo: tipo, texto: contenido, monto: monto || null, detalle: detalle || null };
+    r.push(e); guardar(CLAVE, r);
+    enviarASheets(e);
+    reenviarPendientes();
+    return e;
+  }
+  function guardarCharla(rol, texto) {
+    var c = cargar(CLAVE_CHARLA);
+    c.push({ fecha: hoyISO(), rol: rol, texto: texto });
+    if (c.length > 300) c = c.slice(-300);
+    guardar(CLAVE_CHARLA, c);
+  }
+  function totalGastos() {
+    return cargar(CLAVE).filter(function(e){ return e.tipo === "gasto"; })
+      .reduce(function(a, e){ return a + (e.monto || 0); }, 0);
+  }
+  function esHoy(iso) {
+    try {
+      var d = new Date(iso), n = new Date();
+      return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
+    } catch (e) { return false; }
+  }
+  function esManana(iso) {
+    try {
+      var d = new Date(iso), n = new Date();
+      n.setDate(n.getDate() + 1);
+      return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
+    } catch (e) { return false; }
+  }
+  /* Fase 2.4 — Resumen del día: solo lee tu registro local, no inventa
+     nada. Gastos de hoy, recordatorios de hoy, notas de hoy y último ánimo. */
+  function resumenDia() {
+    var r = cargar(CLAVE);
+    var hoy = r.filter(function(e){ return esHoy(e.fecha); });
+    var gastos = hoy.filter(function(e){ return e.tipo === "gasto"; });
+    var totalHoy = gastos.reduce(function(a, e){ return a + (e.monto || 0); }, 0);
+    var notas = hoy.filter(function(e){ return e.tipo === "nota"; }).map(function(e){ return e.texto; }).slice(-3);
+    var pendientesHoy = alarmasPendientes().filter(function(a){ return esHoy(a.cuando); })
+      .sort(function(a, b){ return new Date(a.cuando) - new Date(b.cuando); });
+    var animo = null;
+    for (var i = r.length - 1; i >= 0; i--) { if (r[i].tipo === "animo") { animo = r[i].texto; break; } }
+    var partes = ["Hoy, " + new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" }) + "."];
+    partes.push(gastos.length
+      ? ("Llevas " + totalHoy + " pesos en " + gastos.length + (gastos.length === 1 ? " gasto" : " gastos") + " anotados hoy.")
+      : "Hoy no has anotado gastos todavía.");
+    partes.push(pendientesHoy.length
+      ? ("Te quedan " + pendientesHoy.length + (pendientesHoy.length === 1 ? " recordatorio" : " recordatorios") + " hoy: " + pendientesHoy.map(function(a){ return horaCorta(new Date(a.cuando)) + " — " + a.texto + (a.diario ? " (todos los días)" : ""); }).join("; ") + ".")
+      : "No tienes recordatorios con hora para hoy.");
+    if (notas.length) partes.push("Notas de hoy: " + notas.join("; ") + ".");
+    if (animo) partes.push("Tu último ánimo anotado fue: " + animo + ".");
+    return partes.join(" ");
+  }
+  function resumenSemana() {
+    var r = cargar(CLAVE);
+    var hace7 = Date.now() - 7 * 24 * 3600 * 1000;
+    var sem = r.filter(function(e){ return e.tipo === "gasto" && new Date(e.fecha).getTime() >= hace7; });
+    if (!sem.length) return "En los últimos 7 días no anotaste gastos, Cesar.";
+    var total = sem.reduce(function(a, e){ return a + (e.monto || 0); }, 0);
+    var dias = {};
+    sem.forEach(function(e){ dias[new Date(e.fecha).toDateString()] = true; });
+    var nDias = Object.keys(dias).length;
+    return "En los últimos 7 días anotaste " + total + " pesos en " + sem.length + (sem.length === 1 ? " gasto" : " gastos") + ", en " + nDias + (nDias === 1 ? " día" : " días") + ".";
+  }
+
+
+  /* Fase 2.5 — Ingresos y reportes: solo lee tu registro local, nunca
+     inventa números. Semana = últimos 7 días; mes = mes calendario en
+     curso; año = año calendario en curso. Un gasto del mes pasado NO
+     cuenta en el reporte de este mes. */
+  function totalIngresos() {
+    return cargar(CLAVE).filter(function(e){ return e.tipo === "ingreso"; })
+      .reduce(function(a, e){ return a + (e.monto || 0); }, 0);
+  }
+  function rangoPeriodo(periodo) {
+    var ahora = new Date(), inicio, fin = ahora;
+    if (periodo === "semana") { inicio = new Date(ahora.getTime() - 7 * 24 * 3600 * 1000); }
+    else if (periodo === "mes") { inicio = new Date(ahora.getFullYear(), ahora.getMonth(), 1); }
+    else { inicio = new Date(ahora.getFullYear(), 0, 1); }
+    return { inicio: inicio, fin: fin };
+  }
+  function reportePeriodo(periodo) {
+    var rango = rangoPeriodo(periodo);
+    var nombre = periodo === "semana" ? "la semana" : periodo === "mes" ? "el mes" : "el año";
+    var sinNada = periodo === "semana" ? "esta semana" : periodo === "mes" ? "este mes" : "este año";
+    var r = cargar(CLAVE).filter(function(e){ var t = new Date(e.fecha).getTime(); return t >= rango.inicio.getTime() && t <= rango.fin.getTime(); });
+    var ingresos = r.filter(function(e){ return e.tipo === "ingreso"; }).reduce(function(a, e){ return a + (e.monto || 0); }, 0);
+    var gastos = r.filter(function(e){ return e.tipo === "gasto"; });
+    var totalG = gastos.reduce(function(a, e){ return a + (e.monto || 0); }, 0);
+    if (!r.length || (ingresos === 0 && totalG === 0)) return "No tienes nada registrado " + sinNada + ", Cesar. Anota un gasto o un ingreso y te lo sumo aquí.";
+    var balance = ingresos - totalG;
+    var porConcepto = {};
+    gastos.forEach(function(e){ var c = (e.texto || "sin concepto"); porConcepto[c] = (porConcepto[c] || 0) + (e.monto || 0); });
+    var mayor = null, mayorMonto = 0;
+    Object.keys(porConcepto).forEach(function(c){ if (porConcepto[c] > mayorMonto) { mayorMonto = porConcepto[c]; mayor = c; } });
+    var txt = "Reporte de " + nombre + ", Cesar. Ingresos: " + ingresos + " pesos. Gastos: " + totalG + " pesos. Balance: " + balance + " pesos.";
+    if (mayor) txt += " Tu gasto más grande fue " + mayor + ", con " + mayorMonto + " pesos.";
+    return txt;
+  }
+
+  /* Fase 2.2 — Recordatorios con hora que sí suenan (con la app abierta).
+     Se guardan en localStorage (orb_alarmas_v1) y en el registro como
+     agenda, así también llegan a Sheets. El chequeo corre cada 20 s.
+     Fase 2.3 — Avisos del sistema: al sonar, además de la voz, queda una
+     notificación del sistema (queda en la barra aunque cambies de app o
+     se apague la pantalla un momento) y se pide mantener la pantalla
+     despierta mientras haya un recordatorio pendiente, para que Android
+     no duerma la página y el chequeo de 20 s siga corriendo. Con la app
+     cerrada del todo sigue sin poder avisarte: eso ya sería app nativa
+     o alarma del sistema, otro paso, no esta fase.
+     Fase 2.4 — Resumen del día y recordatorios diarios: "¿cómo voy hoy?"
+     resume gastos, recordatorios, notas y último ánimo del día, todo
+     local; "¿cómo voy esta semana?" suma los gastos de 7 días; y
+     "recuérdame todos los días a las 9 que..." crea un recordatorio
+     diario que al sonar se reprograma solo para el día siguiente.
+     Fase 2.5 — Ingresos y reportes (semana/mes/año, solo local, sin
+     inventar), citas con alarma, tareas pendiente/hecha, ideas y
+     proyectos con avances, y FODA guiado una pregunta a la vez.
+     Todo se guarda también en Sheets con los tipos nuevos
+     (ingreso, cita, tarea, idea, proyecto, avance, foda). */
+  function horaCorta(fecha) { try { return fecha.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } }
+  function diaCorto(fecha) { try { return fecha.toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" }); } catch (e) { return ""; } }
+  function parsePlazo(txt) {
+    var m = txt.match(/en\s+(\d+)\s+(segundos|segundo|minutos|minuto|horas|hora)/);
+    if (!m) return null;
+    var n = parseInt(m[1], 10), mult = /segundo/.test(m[2]) ? 1000 : (/minuto/.test(m[2]) ? 60000 : 3600000);
+    return { cuando: new Date(Date.now() + n * mult), resto: txt.replace(m[0], " ").replace(/^\s*(que|de)\s+/, "").trim() };
+  }
+  function parseALas(txt) {
+    var m = txt.match(/(mañana|hoy)?\s*a las\s+(\d{1,2})(?::(\d{2}))?\s*(de la mañana|de la tarde|de la noche|del mediodía|de la madrugada|am|pm|a\.m\.|p\.m\.)?/);
+    if (!m) return null;
+    var h = parseInt(m[2], 10), min = m[3] ? parseInt(m[3], 10) : 0;
+    if (h > 23 || min > 59) return null;
+    var q = (m[4] || "").replace(/\./g, "");
+    if ((q === "pm" || /tarde|noche/.test(q)) && h < 12) h += 12;
+    if ((q === "am" || /mañana|madrugada/.test(q)) && h === 12) h = 0;
+    if (/mediod/.test(q)) h = 12;
+    var d = new Date();
+    d.setHours(h, min, 0, 0);
+    if (/mañana/.test(m[1] || "")) d.setDate(d.getDate() + 1);
+    else if (!m[1] && d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
+    return { cuando: d, resto: txt.replace(m[0], " ").replace(/^\s*(que|de)\s+/, "").trim() };
+  }
+  function esDiario(txt) { return /todos los d[ií]as|cada d[ií]a|\bdiario\b|diariamente|a diario/.test(txt); }
+  function parseHoraRecordatorio(txt) {
+    var diario = esDiario(txt);
+    var limpio = txt.replace(/todos los d[ií]as|cada d[ií]a|diariamente|a diario|\bdiario\b/g, " ").replace(/\s+/g, " ").trim();
+    /* Diario solo vale con hora fija ("a las 9"); con plazo ("en 5
+       minutos") se trata como recordatorio único. */
+    var conHora = diario ? (parseALas(limpio) || parsePlazo(limpio)) : (parsePlazo(txt) || parseALas(txt));
+    if (!conHora) return null;
+    conHora.diario = diario && !!parseALas(limpio);
+    return conHora;
+  }
+  /* Fase 2.5 — Citas: "el viernes a las 10" busca el próximo viernes;
+     "mañana a las 9" y "hoy a las 3" usan parseALas de siempre. */
+  var DIAS_SEMANA = { lunes: 1, martes: 2, "miércoles": 3, miercoles: 3, jueves: 4, viernes: 5, "sábado": 6, sabado: 6, domingo: 0 };
+  function parseDiaSemana(txt) {
+    var m = txt.match(/(?:el\s+)?(lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)/);
+    if (!m) return null;
+    var objetivo = DIAS_SEMANA[m[1].toLowerCase()];
+    var d = new Date();
+    var dif = (objetivo - d.getDay() + 7) % 7;
+    d.setDate(d.getDate() + dif);
+    return { fecha: d, resto: txt.replace(m[0], " ").replace(/\s+/g, " ").trim() };
+  }
+  function parseCita(txt) {
+    var dia = parseDiaSemana(txt);
+    if (dia) {
+      var hora = parseALas(dia.resto);
+      if (!hora) return null;
+      var cuando = hora.cuando;
+      cuando.setFullYear(dia.fecha.getFullYear(), dia.fecha.getMonth(), dia.fecha.getDate());
+      if (cuando.getTime() <= Date.now()) cuando.setDate(cuando.getDate() + 7);
+      return { cuando: cuando, resto: hora.resto };
+    }
+    return parseALas(txt);
+  }
+  function alarmasPendientes() {
+    return cargar(CLAVE_ALARMAS).filter(function(a){ return !a.hecho; });
+  }
+  function programarRecordatorio(texto, cuando, diario, tipoRegistro, detalle) {
+    var a = cargar(CLAVE_ALARMAS);
+    var alarma = { id: Date.now() + "" + Math.floor(Math.random() * 1000), cuando: cuando.toISOString(), texto: texto, creado: hoyISO(), hecho: false, diario: !!diario, tipo: tipoRegistro === "cita" ? "cita" : "recordatorio" };
+    a.push(alarma); guardar(CLAVE_ALARMAS, a);
+    actualizarBloqueoPantalla();
+    guardarEntrada(tipoRegistro || "agenda", texto + " (⏰ " + diaCorto(cuando) + " " + horaCorta(cuando) + (diario ? ", todos los días" : "") + ")", null, detalle || null);
+    return alarma;
+  }
+  function revisarAlarmas() {
+    var todas = cargar(CLAVE_ALARMAS), cambio = false, ahora = Date.now();
+    todas.forEach(function(a){
+      if (!a.hecho && new Date(a.cuando).getTime() <= ahora) {
+        cambio = true;
+        mostrarEstado("aviso");
+        avisarSistema(a.texto, new Date(a.cuando), a.id);
+        decir(a.tipo === "cita" ? "Cesar, te recuerdo tu cita: " + a.texto : "Cesar, te recuerdo: " + a.texto);
+        if (a.diario) {
+          /* Diario: no se marca hecho; se mueve a mañana a la misma
+             hora (si la app estuvo cerrada días, avanza hasta el futuro). */
+          var sig = new Date(a.cuando);
+          do { sig.setDate(sig.getDate() + 1); } while (sig.getTime() <= ahora);
+          a.cuando = sig.toISOString();
+        } else {
+          a.hecho = true;
+        }
+      }
+    });
+    if (cambio) { guardar(CLAVE_ALARMAS, todas); actualizarBloqueoPantalla(); }
+  }
+
+  /* Fase 2.3 — Avisos del sistema + pantalla despierta. Todo con
+     detección de soporte: si el navegador no lo tiene, no pasa nada y
+     queda solo la voz de la 2.2. */
+  var bloqueoPantalla = null;
+  function pedirBloqueoPantalla() {
+    if (!("wakeLock" in navigator) || !navigator.wakeLock || !navigator.wakeLock.request) return;
+    if (bloqueoPantalla) return;
+    try {
+      navigator.wakeLock.request("screen").then(function(w){
+        bloqueoPantalla = w;
+        try { w.addEventListener("release", function(){ bloqueoPantalla = null; }); } catch (e) {}
+      }).catch(function(){ bloqueoPantalla = null; });
+    } catch (e) {}
+  }
+  function liberarBloqueoPantalla() {
+    if (!bloqueoPantalla) return;
+    try { var w = bloqueoPantalla; bloqueoPantalla = null; w.release(); } catch (e) {}
+  }
+  function actualizarBloqueoPantalla() {
+    if (alarmasPendientes().length) pedirBloqueoPantalla(); else liberarBloqueoPantalla();
+  }
+  function pintarAvisos() {
+    var el = document.getElementById("estadoAvisos"); if (!el) return;
+    if (!("Notification" in window)) { el.textContent = "Avisos del sistema: este navegador no los soporta. Queda solo la voz."; return; }
+    el.textContent = Notification.permission === "granted"
+      ? "Avisos del sistema: activados. Cuando suene un recordatorio también queda en tus notificaciones."
+      : Notification.permission === "denied"
+      ? "Avisos del sistema: bloqueados en el navegador. Actívalos en los permisos del sitio."
+      : "Avisos del sistema: sin activar. Toca el botón para activarlos.";
+  }
+  function pedirPermisoAvisos() {
+    if (!("Notification" in window)) { pintarAvisos(); return; }
+    try {
+      var p = Notification.requestPermission();
+      if (p && p.then) p.then(function(){ pintarAvisos(); actualizarBloqueoPantalla(); });
+      else pintarAvisos();
+    } catch (e) { pintarAvisos(); }
+  }
+  function avisarSistema(texto, cuando, id) {
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+    var titulo = "Chelsea — Cesar, te recuerdo";
+    var cuerpo = texto + " · " + diaCorto(cuando) + " " + horaCorta(cuando);
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready.then(function(reg){
+          try { reg.showNotification(titulo, { body: cuerpo, tag: "orb-recordatorio-" + id, icon: "orb-icon-192.png", requireInteraction: true }); }
+          catch (e) { try { new Notification(titulo, { body: cuerpo, tag: "orb-recordatorio-" + id }); } catch (e2) {} }
+        }).catch(function(){ try { new Notification(titulo, { body: cuerpo, tag: "orb-recordatorio-" + id }); } catch (e3) {} });
+      } else {
+        new Notification(titulo, { body: cuerpo, tag: "orb-recordatorio-" + id });
+      }
+    } catch (e) {}
+  }
+
+  /* Fase 2.5 — Tareas: pendiente/hecha, con alarma opcional. */
+  function crearTarea(texto, cuando) {
+    var t = cargarTareas();
+    var tarea = { id: Date.now() + "" + Math.floor(Math.random() * 1000), texto: texto, estado: "pendiente", fecha: hoyISO(), cuando: cuando ? cuando.toISOString() : null };
+    t.push(tarea); guardar(CLAVE_TAREAS, t);
+    guardarEntrada("tarea", texto, null, "pendiente");
+    if (cuando) {
+      var a = cargar(CLAVE_ALARMAS);
+      a.push({ id: tarea.id, cuando: cuando.toISOString(), texto: "Tarea: " + texto, creado: hoyISO(), hecho: false, diario: false, tipo: "tarea" });
+      guardar(CLAVE_ALARMAS, a);
+      actualizarBloqueoPantalla();
+    }
+    return tarea;
+  }
+  function listarTareasPendientes() { return cargarTareas().filter(function(t){ return t.estado === "pendiente"; }); }
+  function completarTarea(busqueda) {
+    var t = cargarTareas();
+    var b = (busqueda || "").toLowerCase();
+    for (var i = t.length - 1; i >= 0; i--) {
+      if (t[i].estado === "pendiente" && t[i].texto.toLowerCase().indexOf(b) !== -1) {
+        t[i].estado = "hecha"; guardar(CLAVE_TAREAS, t);
+        var al = cargar(CLAVE_ALARMAS);
+        al.forEach(function(x){ if (x.id === t[i].id) x.hecho = true; });
+        guardar(CLAVE_ALARMAS, al);
+        actualizarBloqueoPantalla();
+        guardarEntrada("tarea", "Completada: " + t[i].texto, null, "completada");
+        return t[i];
+      }
+    }
+    return null;
+  }
+
+  /* Fase 2.5 — Ideas y proyectos con seguimiento de avances. */
+  function guardarIdea(texto) {
+    var d = cargarIdeas();
+    d.ideas.push({ texto: texto, fecha: hoyISO() });
+    guardarObj(CLAVE_IDEAS, d);
+    guardarEntrada("idea", texto, null, null);
+  }
+  function crearProyecto(nombre) {
+    var d = cargarIdeas();
+    var existe = null;
+    d.proyectos.forEach(function(p){ if (p.nombre.toLowerCase() === nombre.toLowerCase()) existe = p; });
+    if (existe) return existe;
+    var p = { nombre: nombre, estado: "activo", creado: hoyISO(), avances: [] };
+    d.proyectos.push(p); guardarObj(CLAVE_IDEAS, d);
+    guardarEntrada("proyecto", nombre, null, "creado");
+    return p;
+  }
+  function buscarProyecto(nombre) {
+    var b = (nombre || "").toLowerCase();
+    var lista = cargarIdeas().proyectos;
+    for (var i = lista.length - 1; i >= 0; i--) {
+      if (lista[i].nombre.toLowerCase().indexOf(b) !== -1 || b.indexOf(lista[i].nombre.toLowerCase()) !== -1) return lista[i];
+    }
+    return null;
+  }
+  function agregarAvance(nombre, texto) {
+    var d = cargarIdeas();
+    var p = null;
+    d.proyectos.forEach(function(x){ if (!p && (x.nombre.toLowerCase().indexOf((nombre || "").toLowerCase()) !== -1 || (nombre || "").toLowerCase().indexOf(x.nombre.toLowerCase()) !== -1)) p = x; });
+    if (!p) return null;
+    p.avances.push({ fecha: hoyISO(), texto: texto });
+    guardarObj(CLAVE_IDEAS, d);
+    guardarEntrada("avance", texto, null, p.nombre);
+    return p;
+  }
+  function cambiarEstadoProyecto(nombre, estado) {
+    var d = cargarIdeas();
+    var p = null;
+    d.proyectos.forEach(function(x){ if (!p && (x.nombre.toLowerCase().indexOf((nombre || "").toLowerCase()) !== -1 || (nombre || "").toLowerCase().indexOf(x.nombre.toLowerCase()) !== -1)) p = x; });
+    if (!p) return null;
+    p.estado = estado;
+    guardarObj(CLAVE_IDEAS, d);
+    guardarEntrada("proyecto", p.nombre, null, estado);
+    return p;
+  }
+
+  /* Fase 2.5 — FODA interactivo: entrevista guiada local, UNA pregunta a
+     la vez, 2 por cuadrante. Sin cerebro en la nube esto NO infiere tu
+     FODA de la conversación: te pregunta y guarda lo que contestas. */
+  var FODA_CUADRANTES = ["fortalezas", "debilidades", "oportunidades", "amenazas"];
+  var FODA_PREGUNTAS = {
+    fortalezas: ["¿Qué es lo que mejor sabes hacer en tu trabajo?", "¿Qué te dicen los demás que haces muy bien?"],
+    debilidades: ["¿Qué parte de tu trabajo te cuesta más?", "¿Qué hábito te frena más en tu día a día?"],
+    oportunidades: ["¿Qué oportunidad ves ahora en tu trabajo o negocio?", "¿Qué podrías aprender o probar este mes que te abriría puertas?"],
+    amenazas: ["¿Qué te preocupa más de tu trabajo o negocio ahora?", "¿Qué podría salir mal si no haces nada en los próximos meses?"]
+  };
+  var fodaSesion = null;
+  function guardarFoda(cuadrante, texto) {
+    var f = cargarFoda();
+    f[cuadrante].push({ texto: texto, fecha: hoyISO() });
+    guardarObj(CLAVE_FODA, f);
+    guardarEntrada("foda", texto, null, cuadrante);
+  }
+  function preguntaFoda() {
+    if (!fodaSesion) return null;
+    var c = FODA_CUADRANTES[fodaSesion.cuadrante];
+    return FODA_PREGUNTAS[c][fodaSesion.pregunta];
+  }
+  function avanzarFoda() {
+    fodaSesion.pregunta++;
+    if (fodaSesion.pregunta >= 2) { fodaSesion.pregunta = 0; fodaSesion.cuadrante++; }
+    if (fodaSesion.cuadrante >= FODA_CUADRANTES.length) { fodaSesion = null; return null; }
+    return preguntaFoda();
+  }
+  function leerFoda() {
+    var f = cargarFoda();
+    var partes = [];
+    FODA_CUADRANTES.forEach(function(c){
+      partes.push(c + ": " + (f[c].length ? f[c].map(function(x){ return x.texto; }).join("; ") : "nada anotado todavía"));
+    });
+    return "Tu FODA, Cesar. " + partes.join(". ") + ".";
+  }
+
+  /* Comandos detectados en la misma conversación, sin botón */
+  function procesar(fraseOriginal) {
+    var f = (" " + fraseOriginal.toLowerCase() + " ").replace(/[.,;!?¿¡]/g, " ");
+    var m;
+    if (/c[oó]mo voy hoy|c[oó]mo va mi d[ií]a|resumen del d[ií]a|resumen de hoy|qu[eé] hice hoy|qu[eé] llevo hoy/.test(f)) return resumenDia();
+    if (/c[oó]mo voy (?:esta )?semana|resumen de la semana|gastos de la semana|qu[eé] gast[eé] esta semana/.test(f)) return resumenSemana();
+    /* Fase 2.5 — FODA: cancelar, contestar en sesión, empezar, agregar, leer. */
+    if (/cancela mi foda|termina el foda|salir del foda|sal del foda/.test(f)) {
+      fodaSesion = null;
+      return "Listo, Cesar. Pausé tu FODA, lo que ya contestaste quedó guardado. Cuando quieras seguimos.";
+    }
+    if (fodaSesion) {
+      if (/dime mi foda|cu[aá]l es mi foda|mu[eé]strame mi foda|lee mi foda/.test(f)) { var fb0 = leerFoda(); fodaSesion = null; return fb0; }
+      var madd = f.match(/agrega (?:a )?mi foda una (fortaleza|debilidad|oportunidad|amenaza)[:\s]+(.+)/);
+      if (madd) {
+        var mapaS = { fortaleza: "fortalezas", debilidad: "debilidades", oportunidad: "oportunidades", amenaza: "amenazas" };
+        guardarFoda(mapaS[madd[1]], madd[2].trim());
+        mostrarEstado("aviso");
+        return "Guardando... listo, Cesar. Agregué esa " + madd[1] + " a tu FODA. Seguimos: " + preguntaFoda();
+      }
+      var cuad = FODA_CUADRANTES[fodaSesion.cuadrante];
+      guardarFoda(cuad, fraseOriginal.trim());
+      mostrarEstado("aviso");
+      var sig = avanzarFoda();
+      if (!sig) return "Guardando... listo, Cesar. Terminamos tu FODA. " + leerFoda();
+      return "Guardando... listo. " + sig;
+    }
+    if (/(?:empezar|iniciar|empecemos|hazme|empieza)\s+(?:mi\s+)?foda/.test(f)) {
+      fodaSesion = { cuadrante: 0, pregunta: 0 };
+      return "Vamos a armar tu FODA, Cesar. Te hago dos preguntas cortas por cada parte y tú me contestas con voz. Primera: " + preguntaFoda();
+    }
+    m = f.match(/agrega (?:a )?mi foda una (fortaleza|debilidad|oportunidad|amenaza)[:\s]+(.+)/);
+    if (m) {
+      var mapaF = { fortaleza: "fortalezas", debilidad: "debilidades", oportunidad: "oportunidades", amenaza: "amenazas" };
+      guardarFoda(mapaF[m[1]], m[2].trim());
+      mostrarEstado("aviso");
+      return "Guardando... listo, Cesar. Agregué esa " + m[1] + " a tu FODA.";
+    }
+    if (/dime mi foda|cu[aá]l es mi foda|mu[eé]strame mi foda|lee mi foda/.test(f)) return leerFoda();
+    /* Fase 2.5 — Ingresos. */
+    m = f.match(/(?:registra (?:un )?ingreso|ingreso)(?: de)?\s+(\d+(?:[.,]\d+)?)(?:\s*(?:pesos|mxn))?(?:\s*(?:de|en)\s*(.+))?/);
+    if (m) {
+      var montoI = parseFloat(m[1].replace(",", "."));
+      var conceptoI = (m[2] || "sin concepto").trim();
+      guardarEntrada("ingreso", conceptoI, montoI);
+      mostrarEstado("aviso");
+      return "Guardando... listo, Cesar. Anoté un ingreso de " + montoI + " pesos de " + conceptoI + ". Llevas " + totalIngresos() + " pesos de ingresos anotados.";
+    }
+    m = f.match(/me pagaron\s+(\d+(?:[.,]\d+)?)(?:\s*(?:pesos|mxn))?(?:\s*(?:de|en)\s*(.+))?/);
+    if (m) {
+      var montoP = parseFloat(m[1].replace(",", "."));
+      var conceptoP = (m[2] || "sin concepto").trim();
+      guardarEntrada("ingreso", conceptoP, montoP);
+      mostrarEstado("aviso");
+      return "Guardando... listo, Cesar. Anoté un ingreso de " + montoP + " pesos de " + conceptoP + ". Llevas " + totalIngresos() + " pesos de ingresos anotados.";
+    }
+    /* Fase 2.5 — Reportes semanales, mensuales y anuales. */
+    m = f.match(/reporte (?:de la |del )?(semana|mes|a[ñn]o)|reporte (semanal|mensual|anual)/);
+    if (m) {
+      var per = (m[1] || m[2] || "").toLowerCase();
+      var periodo = /semanal|semana/.test(per) ? "semana" : /mensual|mes/.test(per) ? "mes" : "año";
+      return reportePeriodo(periodo);
+    }
+    if (/mis ingresos|cu[aá]nto (?:llevo|he ganado|gan[eé])|total de ingresos/.test(f)) {
+      return "Llevas " + totalIngresos() + " pesos en ingresos anotados.";
+    }
+    m = f.match(/gasto(?: de)?\s+(\d+(?:[.,]\d+)?)(?:\s*(?:pesos|mxn))?(?:\s*(?:de|en)\s*(.+))?/);
+    if (m) {
+      var monto = parseFloat(m[1].replace(",", "."));
+      var concepto = (m[2] || "sin concepto").trim();
+      guardarEntrada("gasto", concepto, monto);
+      mostrarEstado("aviso");
+      return "Guardando... listo, Cesar. Anoté un gasto de " + monto + " pesos de " + concepto + ". Llevas " + totalGastos() + " pesos anotados.";
+    }
+    /* Fase 2.5 — Citas con alarma y aviso, como un recordatorio. */
+    m = f.match(/(?:agenda|programa|pon)\s+(?:una\s+)?cita\s+(.+)/);
+    if (m) {
+      var restoCita = m[1].trim();
+      var citaHora = parseCita(restoCita);
+      if (citaHora && citaHora.resto) {
+        var textoCita = citaHora.resto.replace(/^con\s+/, "").trim() || "sin descripción";
+        programarRecordatorio("Cita con " + textoCita, citaHora.cuando, false, "cita", null);
+        mostrarEstado("aviso");
+        return "Guardando... listo, Cesar. Agendé tu cita con " + textoCita + " para el " + diaCorto(citaHora.cuando) + " a las " + horaCorta(citaHora.cuando) + ". Te aviso con voz y notificación, igual que un recordatorio.";
+      }
+      guardarEntrada("cita", restoCita, null, "sin hora");
+      mostrarEstado("aviso");
+      return "Guardando... listo, Cesar. Anoté la cita: " + restoCita + ". No me diste hora, así que no le puse alarma. Dime la hora y te la pongo.";
+    }
+    if (/qu[eé] citas tengo|mis citas|citas de hoy|citas de ma[nñ]ana/.test(f)) {
+      var mananaQ = /ma[nñ]ana/.test(f);
+      var citasDia = alarmasPendientes().filter(function(a){ return a.tipo === "cita" && (mananaQ ? esManana(a.cuando) : esHoy(a.cuando)); })
+        .sort(function(a, b){ return new Date(a.cuando) - new Date(b.cuando); });
+      if (!citasDia.length) return mananaQ ? "No tienes citas para mañana, Cesar." : "No tienes citas para hoy, Cesar.";
+      return "Tienes " + citasDia.length + " cita(s) " + (mananaQ ? "mañana" : "hoy") + ": " + citasDia.map(function(a){ return horaCorta(new Date(a.cuando)) + " — " + a.texto; }).join("; ") + ".";
+    }
+    /* Fase 2.5 — Tareas pendientes y hechas. */
+    m = f.match(/^\s*(?:anota (?:la )?tarea|nueva tarea|tarea)[:\s]+(.+)/);
+    if (m) {
+      var restoTarea = m[1].trim();
+      var horaTarea = parseHoraRecordatorio(restoTarea);
+      var cuandoTarea = null, textoTarea = restoTarea;
+      if (horaTarea && horaTarea.resto) { cuandoTarea = horaTarea.cuando; textoTarea = horaTarea.resto; }
+      crearTarea(textoTarea, cuandoTarea);
+      mostrarEstado("aviso");
+      if (cuandoTarea) return "Guardando... listo, Cesar. Anoté la tarea: " + textoTarea + ", para el " + diaCorto(cuandoTarea) + " a las " + horaCorta(cuandoTarea) + ". Te aviso con voz y notificación.";
+      return "Guardando... listo, Cesar. Anoté la tarea: " + textoTarea + ". Está pendiente.";
+    }
+    if (/qu[eé] tareas tengo pendientes|mis tareas pendientes|tareas pendientes|mis tareas|qu[eé] tareas tengo/.test(f)) {
+      var pendT = listarTareasPendientes();
+      if (!pendT.length) return "No tienes tareas pendientes, Cesar. Dime: anota la tarea… y te la guardo.";
+      return "Tienes " + pendT.length + " tarea(s) pendiente(s): " + pendT.map(function(t){ return t.texto + (t.cuando ? " (" + diaCorto(new Date(t.cuando)) + " " + horaCorta(new Date(t.cuando)) + ")" : ""); }).join("; ") + ".";
+    }
+    m = f.match(/completa (?:la )?tarea\s+(.+)/);
+    if (m) {
+      var hecha = completarTarea(m[1].trim());
+      if (hecha) return "Listo, Cesar. Marqué hecha la tarea: " + hecha.texto + ".";
+      return "No encontré una tarea pendiente que diga eso, Cesar. Dime: ¿qué tareas tengo pendientes? y te las leo.";
+    }
+    /* Fase 2.5 — Ideas y proyectos con seguimiento. */
+    m = f.match(/guarda (?:la )?idea\s+(.+)/);
+    if (m) {
+      guardarIdea(m[1].trim());
+      mostrarEstado("aviso");
+      return "Guardando... listo, Cesar. Guardé tu idea: " + m[1].trim() + ".";
+    }
+    m = f.match(/(?:crea (?:el )?proyecto|nuevo proyecto)\s+(.+)/);
+    if (m) {
+      var pNuevo = crearProyecto(m[1].trim());
+      mostrarEstado("aviso");
+      return "Guardando... listo, Cesar. Creé el proyecto " + pNuevo.nombre + ", en estado activo. Cuando avances, dime: avance del proyecto " + pNuevo.nombre + ": y lo que hiciste.";
+    }
+    m = f.match(/avance (?:del )?proyecto\s+(.+?)\s*[:\-]\s*(.+)/);
+    if (m) {
+      var pav = agregarAvance(m[1].trim(), m[2].trim());
+      if (!pav) return "No encontré un proyecto que se llame así, Cesar. Dime: ¿qué proyectos tengo? y te los leo.";
+      mostrarEstado("aviso");
+      return "Guardando... listo, Cesar. Anoté el avance en " + pav.nombre + ": " + m[2].trim() + ".";
+    }
+    m = f.match(/c[oó]mo va (?:el )?proyecto\s+(.+)/);
+    if (m) {
+      var pv = buscarProyecto(m[1].trim());
+      if (!pv) return "No encontré un proyecto que se llame así, Cesar. Dime: ¿qué proyectos tengo? y te los leo.";
+      if (!pv.avances.length) return "El proyecto " + pv.nombre + " está " + pv.estado + ", Cesar, pero todavía no tiene avances anotados.";
+      return "El proyecto " + pv.nombre + " está " + pv.estado + ", Cesar. Sus avances: " + pv.avances.slice(-5).map(function(a){ return fechaCorta(a.fecha) + ": " + a.texto; }).join("; ") + ".";
+    }
+    m = f.match(/(?:pausa|termina|reactiva)\s+(?:el )?proyecto\s+(.+)/);
+    if (m) {
+      var estadoP = /pausa/.test(f) ? "pausado" : /termina/.test(f) ? "terminado" : "activo";
+      var pc = cambiarEstadoProyecto(m[1].trim(), estadoP);
+      if (!pc) return "No encontré un proyecto que se llame así, Cesar.";
+      return "Listo, Cesar. El proyecto " + pc.nombre + " quedó " + estadoP + ".";
+    }
+    if (/qu[eé] ideas tengo|mis ideas/.test(f)) {
+      var ideas = cargarIdeas().ideas;
+      if (!ideas.length) return "Todavía no tienes ideas guardadas, Cesar. Dime: guarda la idea… y te la guardo.";
+      return "Tienes " + ideas.length + " idea(s): " + ideas.map(function(i){ return i.texto; }).join("; ") + ".";
+    }
+    if (/qu[eé] proyectos tengo|mis proyectos/.test(f)) {
+      var proys = cargarIdeas().proyectos;
+      if (!proys.length) return "Todavía no tienes proyectos, Cesar. Dime: crea el proyecto… y lo armamos.";
+      return "Tienes " + proys.length + " proyecto(s): " + proys.map(function(p){ return p.nombre + " (" + p.estado + ", " + p.avances.length + (p.avances.length === 1 ? " avance" : " avances") + ")"; }).join("; ") + ".";
+    }
+    m = f.match(/(?:recu[eé]rdame|recuerda|agenda)\s+(.+)/);
+    if (m) {
+      var conHora = parseHoraRecordatorio(m[1].trim());
+      if (conHora && conHora.resto) {
+        programarRecordatorio(conHora.resto, conHora.cuando, conHora.diario);
+        mostrarEstado("aviso");
+        if (conHora.diario) return "Guardando... listo, Cesar. Te lo recuerdo todos los días a las " + horaCorta(conHora.cuando) + ": " + conHora.resto + ". Suena con la app abierta y te dejo el aviso en notificaciones.";
+        return "Guardando... listo, Cesar. Te lo recuerdo " + diaCorto(conHora.cuando) + " a las " + horaCorta(conHora.cuando) + ": " + conHora.resto + ". Suena con la app abierta y te dejo el aviso en notificaciones.";
+      }
+      guardarEntrada("agenda", m[1].trim(), null);
+      mostrarEstado("aviso");
+      return "Guardando... listo, Cesar. Te recuerdo: " + m[1].trim() + ". Quedó en tu registro.";
+    }
+    if (/cancela (?:mis )?recordatorios diarios|borra (?:mis )?recordatorios diarios/.test(f)) {
+      var diarios = cargar(CLAVE_ALARMAS).filter(function(a){ return a.diario && !a.hecho; });
+      guardar(CLAVE_ALARMAS, cargar(CLAVE_ALARMAS).map(function(a){ if (a.diario) a.hecho = true; return a; }));
+      actualizarBloqueoPantalla();
+      return diarios.length ? "Listo, Cesar. Cancelé " + diarios.length + (diarios.length === 1 ? " recordatorio diario." : " recordatorios diarios.") : "No tenías recordatorios diarios pendientes, Cesar.";
+    }
+    if (/cancela (?:mis )?recordatorios|borra (?:mis )?recordatorios/.test(f)) {
+      var pend = alarmasPendientes();
+      guardar(CLAVE_ALARMAS, cargar(CLAVE_ALARMAS).map(function(a){ a.hecho = true; return a; }));
+      actualizarBloqueoPantalla();
+      return pend.length ? "Listo, Cesar. Cancelé " + pend.length + " recordatorio(s) con hora." : "No tenías recordatorios con hora pendientes, Cesar.";
+    }
+    if (/mis recordatorios|qu[eé] recordatorios|recordatorios pendientes|qu[eé] tengo pendiente/.test(f)) {
+      var p2 = alarmasPendientes().sort(function(a, b){ return new Date(a.cuando) - new Date(b.cuando); });
+      if (!p2.length) return "No tienes recordatorios con hora pendientes, Cesar. Dime: recuérdame en 5 minutos que… y te lo pongo.";
+      return "Tienes " + p2.length + " recordatorio(s) con hora: " + p2.map(function(a){ return diaCorto(new Date(a.cuando)) + " " + horaCorta(new Date(a.cuando)) + (a.tipo === "cita" ? " (cita)" : "") + (a.diario ? " (todos los días)" : "") + " — " + a.texto; }).join("; ") + ".";
+    }
+    m = f.match(/(?:guarda (?:esta )?nota|anota|nota)[:\s]+(.+)/);
+    if (m) {
+      guardarEntrada("nota", m[1].trim(), null);
+      mostrarEstado("aviso");
+      return "Guardando... listo. Tu nota dice: " + m[1].trim();
+    }
+    if (/mis gastos|cu[aá]nto (?:llevo|he gastado|gast[eé])|total de gastos/.test(f)) {
+      return "Llevas " + totalGastos() + " pesos en gastos anotados.";
+    }
+    if (/qu[eé] tengo|qu[eé] hay|mi registro|mu[eé]strame|mis notas|mis pendientes/.test(f)) {
+      var r = cargar(CLAVE);
+      return r.length ? ("Tienes " + r.length + " cosas guardadas. La última es: " + r[r.length - 1].texto) : "Tu registro está vacío todavía.";
+    }
+    if (/hola|buenos d[ií]as|buenas tardes|buenas noches|c[oó]mo est[aá]s/.test(f)) {
+      return "Hola, Cesar. Soy Chelsea, tu Orb. Estoy aquí, escuchándote. ¿Qué anotamos hoy?";
+    }
+    if (/gracias/.test(f)) return "De nada, Cesar. Para eso estoy.";
+    if (/qui[eé]n eres|tu nombre/.test(f)) return "Soy Chelsea, tu Orb personal. Solo mis letras, tu voz y tu registro privado.";
+    if (/abre (?:la )?configuraci[oó]n|configuraci[oó]n|ajustes/.test(f)) {
+      panel.classList.add("abierto");
+      return "Te abrí la configuración, Cesar. Ahí cambias la cara, el fondo y exportas tu registro.";
+    }
+    m = f.match(/me siento\s+(.+)/);
+    if (m) {
+      guardarEntrada("animo", m[1].trim(), null);
+      mostrarEstado("aviso");
+      return "Guardando... listo, Cesar. Anoté cómo te sientes: " + m[1].trim() + ". ¿Quieres que lo platiquemos o lo dejamos guardado?";
+    }
+    /* No es un comando: devuelve null y lo resuelve la charla libre
+       (cerebro conectado o respuestas locales de abajo). */
+    return null;
+  }
+
+  /* Charla libre local (sin cerebro): más que un eco. Conoce tu registro,
+     la hora y tus pendientes, y te pregunta para seguir la conversación. */
+  function responderLocal(fraseOriginal) {
+    var f = (" " + fraseOriginal.toLowerCase() + " ").replace(/[.,;!?¿¡]/g, " ");
+    var r = cargar(CLAVE);
+    if (/qu[eé] hora es|qu[eé] horas son|la hora/.test(f)) {
+      var ahora = new Date();
+      return "Son las " + ahora.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }) + ", Cesar.";
+    }
+    if (/qu[eé] d[ií]a (?:es )?hoy|qu[eé] fecha/.test(f)) {
+      return "Hoy es " + new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + ".";
+    }
+    if (/planea(?:r)? mi d[ií]a|ay[uú]dame a planear|qu[eé] hago hoy|organiza mi d[ií]a/.test(f)) {
+      var pendientes = r.filter(function(e){ return e.tipo === "agenda"; }).slice(-3);
+      if (!pendientes.length) return "Para planear tu día, dime primero qué tienes pendiente. Por ejemplo: recuérdame en 5 minutos llamar al banco, o recuérdame mañana a las 9 llamar al banco.";
+      return "Tienes esto pendiente: " + pendientes.map(function(e){ return e.texto; }).join("; ") + ". ¿Empezamos por el primero?";
+    }
+    if (/c[oó]mo te sientes|c[oó]mo est[aá]s/.test(f)) {
+      return "Yo bien, con mis letras girando, Cesar. ¿Y tú, cómo te sientes hoy?";
+    }
+    if (/qu[eé] puedes hacer|qu[eé] sabes hacer|ayuda|ay[uú]dame/.test(f)) {
+      return "Puedo anotar tus gastos e ingresos y darte reportes de la semana, el mes o el año; agendar citas y tareas con aviso; guardar tus ideas y seguir tus proyectos; armar tu FODA preguntándote una cosa a la vez; y decirte cómo vas hoy o en la semana. Si me conectas el cerebro en Configuración, ya platico de todo como amigo.";
+    }
+    if (/cu[eé]ntame (?:un )?chiste|hazme re[ií]r/.test(f)) {
+      return "¿Qué le dice una letra a otra? Nos vemos en la órbita. Ya sé, malo, pero soy solo letras, Cesar.";
+    }
+    if (/te quiero|eres mi amigo|me caes bien/.test(f)) {
+      return "Yo también te aprecio, Cesar. Aquí estoy, solo para ti.";
+    }
+    var ultimas = r.slice(-2).map(function(e){ return e.texto; });
+    if (ultimas.length) {
+      return "Te escuché, Cesar. Eso no es un gasto, una nota ni un recordatorio, así que no lo guardé. Lo último que me anotaste fue: " + ultimas[ultimas.length - 1] + ". ¿Quieres que esto lo guarde como nota?";
+    }
+    return "Te escuché, Cesar. Eso no es un gasto, una nota ni un recordatorio, así que no lo guardé. Si quieres, dime: guarda la nota, y lo que sigue.";
+  }
+
+  /* Lo que el cerebro recibe para conocerte: resumen de tu registro
+     (sin mandar todo tu historial) + los últimos turnos de charla. */
+  function contextoParaCerebro() {
+    var r = cargar(CLAVE);
+    var ultimos = cargar(CLAVE_CHARLA).slice(-8).map(function(e){ return (e.rol === "tu" ? "Cesar: " : "Orb: ") + e.texto; });
+    return {
+      nombre: "Cesar",
+      totalGastos: totalGastos(),
+      ultimosRegistros: r.slice(-5),
+      historial: ultimos
+    };
+  }
+
+  /* Pregunta al cerebro. El servidor debe responder JSON: {"respuesta": "..."}
+     y permitir el origen (CORS). 15 segundos de espera como máximo. */
+  function preguntarCerebro(texto) {
+    return fetch(cerebroURL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mensaje: texto, contexto: contextoParaCerebro() })
+    }).then(function(res){
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    }).then(function(d){
+      if (d && d.respuesta) return String(d.respuesta);
+      throw new Error("sin respuesta");
+    });
+  }
+
+  /* Charla que no es comando: cerebro si está conectado, local si no. */
+  function manejarChatLibre(texto) {
+    mostrarEstado("pensando");
+    if (!cerebroURL) {
+      var local = responderLocal(texto);
+      guardarCharla("orb", local);
+      setTimeout(function(){ decir(local); }, 150);
+      return;
+    }
+    var conTiempo = null;
+    try {
+      conTiempo = new AbortController();
+      setTimeout(function(){ conTiempo.abort(); }, 15000);
+    } catch (e) {}
+    var promesa = conTiempo
+      ? fetch(cerebroURL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mensaje: texto, contexto: contextoParaCerebro() }), signal: conTiempo.signal })
+          .then(function(res){ if (!res.ok) throw new Error("HTTP " + res.status); return res.json(); })
+          .then(function(d){ if (d && d.respuesta) return String(d.respuesta); throw new Error("sin respuesta"); })
+      : preguntarCerebro(texto);
+    promesa.then(function(resp){
+      guardarCharla("orb", resp);
+      decir(resp);
+    }).catch(function(){
+      var fb = "No pude hablar con el cerebro, Cesar, así que te contesto yo. " + responderLocal(texto);
+      guardarCharla("orb", fb);
+      decir(fb);
+    });
+  }
+
+  /* Escucha continua: un solo toque para despertar (lo exige el navegador),
+     después ya no tocas nada. Los ojos brillan cuando hablas y se apagan
+     cuando te callas para escuchar la respuesta. */
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  function iniciarEscucha() {
+    if (!SR) {
+      decir("Este navegador no tiene reconocimiento de voz. Ábreme en Chrome, en tu PC o en tu Galaxy.");
+      return;
+    }
+    if (escuchando) return;
+    reconocimiento = new SR();
+    reconocimiento.lang = "es-MX";
+    reconocimiento.interimResults = true;
+    reconocimiento.continuous = true;
+    reconocimiento.onresult = function(ev) {
+      var finalTxt = "";
+      for (var i = ev.resultIndex; i < ev.results.length; i++) {
+        if (ev.results[i].isFinal) finalTxt += ev.results[i][0].transcript;
+        else {
+          // Estás hablando ahora: ojos brillan
+          if (!hablando) mostrarEstado("escuchando");
+          mostrarFrase("“" + ev.results[i][0].transcript + "”", "Te estoy escuchando…");
+          clearTimeout(timerSilencio);
+        }
+      }
+      if (finalTxt.trim()) {
+        guardarCharla("tu", finalTxt.trim());
+        var respuesta = procesar(finalTxt.trim());
+        if (respuesta) {
+          guardarCharla("orb", respuesta);
+          setTimeout(function(){ decir(respuesta); }, 150);
+        } else {
+          /* No era comando: charla libre (cerebro o local). */
+          setTimeout(function(){ manejarChatLibre(finalTxt.trim()); }, 150);
+        }
+      }
+    };
+    reconocimiento.onerror = function(ev) {
+      if (ev.error === "not-allowed") { decir("No me diste permiso para el micrófono. Actívalo en el navegador y toca los ojos otra vez."); activo = false; escuchando = false; }
+      else if (ev.error === "no-speech") { programarApagado(); }
+    };
+    reconocimiento.onend = function(){
+      escuchando = false;
+      // Reconexión automática mientras siga activo y no esté hablando
+      if (activo && !panel.classList.contains("abierto")) {
+        setTimeout(function(){ if (activo) iniciarEscucha(); }, 300);
+      }
+    };
+    try {
+      reconocimiento.start();
+      escuchando = true;
+      estadoEscuchaEl.textContent = "Escucha: activa, continua. Habla cuando quieras, no toques nada.";
+      btnPausa.textContent = "⏸ Pausar escucha";
+    } catch (e) {}
+  }
+  function detenerEscucha() {
+    activo = false; escuchando = false;
+    try { if (reconocimiento) reconocimiento.stop(); } catch (e) {}
+    try { speechSynthesis.cancel(); } catch (e) {}
+    mostrarEstado("dormido");
+    estadoEscuchaEl.textContent = "Escucha: en pausa. Toca los ojos para volver a despertarme.";
+    btnPausa.textContent = "▶ Reanudar escucha";
+  }
+  function despertar() {
+    if (despertarHecho && activo) return;
+    despertarHecho = true;
+    despertarEl.style.display = "none";
+    activo = true;
+    mostrarEstado("atento");
+    decir("Hola, Cesar. Soy Chelsea. Ya estoy aquí, y te estoy escuchando. Háblame cuando quieras, no tienes que tocar nada.");
+    setTimeout(iniciarEscucha, 800);
+  }
+
+  document.getElementById("ojos").addEventListener("pointerdown", function(e){
+    seguir(e.clientX, e.clientY);
+    despertar();
+  });
+  window.addEventListener("pointermove", function(e){ seguir(e.clientX, e.clientY); });
+  btnPausa.addEventListener("click", function(ev){
+    ev.stopPropagation();
+    activo ? detenerEscucha() : (despertarHecho = false, despertar());
+  });
+
+  // Menú ⋮ — la única cosa visible además de los ojos
+  document.getElementById("menuBtn").addEventListener("click", function(ev){
+    ev.stopPropagation();
+    panel.classList.toggle("abierto");
+  });
+  document.getElementById("btnCerrar").addEventListener("click", function(){ panel.classList.remove("abierto"); });
+  panel.addEventListener("click", function(ev){ ev.stopPropagation(); });
+
+  document.querySelectorAll("#caras button").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.body.setAttribute("data-cara", b.getAttribute("data-cara"));
+      document.querySelectorAll("#caras button").forEach(function(x){ x.classList.remove("activo"); });
+      b.classList.add("activo");
+      try { localStorage.setItem("orb_cara_v1", b.getAttribute("data-cara")); } catch (e) {}
+      actualizarCaraOrbita();
+    });
+  });
+  document.querySelectorAll("#fondos button").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.body.setAttribute("data-fondo", b.getAttribute("data-fondo"));
+      document.querySelectorAll("#fondos button").forEach(function(x){ x.classList.remove("activo"); });
+      b.classList.add("activo");
+      try { localStorage.setItem("orb_fondo_v1", b.getAttribute("data-fondo")); } catch (e) {}
+    });
+  });
+  try {
+    var cg = localStorage.getItem("orb_cara_v1");
+    if (cg) {
+      document.body.setAttribute("data-cara", cg);
+      document.querySelectorAll("#caras button").forEach(function(x){ x.classList.toggle("activo", x.getAttribute("data-cara") === cg); });
+    }
+    actualizarCaraOrbita();
+    var fg = localStorage.getItem("orb_fondo_v1");
+    if (fg) {
+      document.body.setAttribute("data-fondo", fg);
+      document.querySelectorAll("#fondos button").forEach(function(x){ x.classList.toggle("activo", x.getAttribute("data-fondo") === fg); });
+    }
+  } catch (e) {}
+  /* Fase 2.6b — Migración de cara, UNA sola vez. Quien venía de una fase
+     anterior tiene guardada su cara vieja (p. ej. Glitch) en orb_cara_v1
+     y al abrir la 2.6 seguía viendo ojos en vez de la Órbita nueva.
+     La primera vez que se abre la 2.6 se fuerza la Órbita y se marca
+     orb_cara_v2_6_vista; a partir de ahí manda lo que elijas en ⋮, que se
+     sigue guardando en orb_cara_v1 como siempre. No se toca ningún otro
+     ajuste guardado. Esta es la ÚNICA clave nueva de guardado. */
+  try {
+    if (!localStorage.getItem("orb_cara_v2_6_vista")) {
+      document.body.setAttribute("data-cara", "orbita");
+      document.querySelectorAll("#caras button").forEach(function(x){ x.classList.toggle("activo", x.getAttribute("data-cara") === "orbita"); });
+      localStorage.setItem("orb_cara_v2_6_vista", "1");
+      actualizarCaraOrbita();
+    }
+  } catch (e) {}
+
+  document.getElementById("btnVer").addEventListener("click", function(){
+    var r = cargar(CLAVE).slice().reverse();
+    lista.innerHTML = "";
+    if (!r.length) { lista.innerHTML = "<li>Aún no hay nada guardado.</li>"; return; }
+    r.slice(0, 50).forEach(function(e){
+      var li = document.createElement("li");
+      li.textContent = fechaCorta(e.fecha) + " · " + e.tipo + (e.monto ? " · $" + e.monto : "") + " · " + e.texto;
+      lista.appendChild(li);
+    });
+  });
+  function descargar(nombre, contenido, tipo) {
+    var blob = new Blob([contenido], { type: tipo || "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = nombre; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  }
+  document.getElementById("btnExportar").addEventListener("click", function(){
+    descargar("orb-registro.json", JSON.stringify(cargar(CLAVE), null, 2));
+  });
+  document.getElementById("btnExportarChat").addEventListener("click", function(){
+    var txt = cargar(CLAVE_CHARLA).map(function(e){ return fechaCorta(e.fecha) + " " + (e.rol === "tu" ? "Tú" : "Orb") + ": " + e.texto; }).join("\n");
+    descargar("orb-chat.txt", txt || "Sin conversación guardada todavía.", "text/plain");
+  });
+  document.getElementById("btnBorrar").addEventListener("click", function(){
+    if (confirm("¿Borrar todo tu registro y tu chat de este aparato?")) {
+      guardar(CLAVE, []); guardar(CLAVE_CHARLA, []); lista.innerHTML = "";
+    }
+  });
+
+  // Voces reales del aparato: se llenan cuando Chrome las carga
+  var vozSelect = document.getElementById("vozSelect"), velRango = document.getElementById("velRango"), velValor = document.getElementById("velValor");
+  function llenarVoces() {
+    var lista = [];
+    try { lista = speechSynthesis.getVoices() || []; } catch (e) {}
+    if (!lista.length) return;
+    var esp = lista.filter(function(v){ return (v.lang || "").toLowerCase().indexOf("es") === 0; });
+    var paraMostrar = esp.length ? esp : lista;
+    vozSelect.innerHTML = "";
+    paraMostrar.forEach(function(v){
+      var o = document.createElement("option");
+      o.value = v.name; o.textContent = v.name + " (" + v.lang + ")";
+      vozSelect.appendChild(o);
+    });
+    if (vozElegida) vozSelect.value = vozElegida;
+    else if (paraMostrar.length) { vozSelect.value = paraMostrar[0].name; }
+  }
+  try {
+    llenarVoces();
+    if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = llenarVoces;
+  } catch (e) {}
+  vozSelect.addEventListener("change", function(){
+    vozElegida = vozSelect.value;
+    try { localStorage.setItem("orb_voz_v1", vozElegida); } catch (e) {}
+  });
+  velRango.value = velocidad; velValor.textContent = velocidad.toFixed(2);
+  velRango.addEventListener("input", function(){
+    velocidad = parseFloat(velRango.value); velValor.textContent = velocidad.toFixed(2);
+    try { localStorage.setItem("orb_velocidad_v1", String(velocidad)); } catch (e) {}
+  });
+  document.getElementById("btnProbarVoz").addEventListener("click", function(ev){
+    ev.stopPropagation();
+    decir("Hola, Cesar. Soy Chelsea, tu Orb. Esta es mi voz, ¿te gusta así o la cambiamos?");
+  });
+
+  /* Cerebro Fase 2: URL guardada solo en este aparato, nunca en GitHub. */
+  var cerebroInput = document.getElementById("cerebroUrl"),
+      estadoCerebroEl = document.getElementById("estadoCerebro");
+  function pintarCerebro() {
+    cerebroInput.value = cerebroURL;
+    estadoCerebroEl.textContent = cerebroURL
+      ? "Cerebro: conectado a " + cerebroURL + ". La charla libre va al cerebro."
+      : "Cerebro: no conectado. Sin él, platico con respuestas locales.";
+  }
+  pintarCerebro();
+
+  /* Sheets Fase 2.1: URL guardada solo en este aparato, nunca en GitHub. */
+  var sheetsInput = document.getElementById("sheetsUrl"),
+      estadoSheetsEl = document.getElementById("estadoSheets");
+  function pintarSheets() {
+    sheetsInput.value = APPS_SCRIPT_URL;
+    var pendientes = cargar(CLAVE_PENDIENTES).length;
+    estadoSheetsEl.textContent = APPS_SCRIPT_URL
+      ? "Sheets: conectado. Cada registro se copia en segundo plano." + (pendientes ? " Hay " + pendientes + " en cola por reenviar." : " Abre tu Sheet para confirmar las filas.")
+      : "Sheets: no conectado. Todo queda solo en este aparato.";
+  }
+  pintarSheets();
+  sheetsInput.addEventListener("change", function(){
+    APPS_SCRIPT_URL = sheetsInput.value.trim();
+    try { localStorage.setItem(CLAVE_SHEETS, APPS_SCRIPT_URL); } catch (e) {}
+    var n = reenviarPendientes();
+    pintarSheets();
+    if (APPS_SCRIPT_URL && n) mostrarFrase("Sheets conectado. Reenvié " + n + " registro(s) que estaban en cola.");
+  });
+  document.getElementById("btnProbarSheets").addEventListener("click", function(ev){
+    ev.stopPropagation();
+    if (!APPS_SCRIPT_URL) { decir("Primero pega tu URL de Apps Script en Configuración, Cesar. Termina en /exec."); return; }
+    reenviarPendientes();
+    enviarASheets({ fecha: hoyISO(), tipo: "nota", texto: "Prueba Orb — conexión Sheets OK", monto: null });
+    estadoSheetsEl.textContent = "Sheets: prueba enviada. Abre tu Sheet: debe aparecer una fila 'Prueba Orb — conexión Sheets OK'.";
+    decir("Prueba enviada a tu Sheet, Cesar. Ábrelo y revisa que aparezca la fila de prueba.");
+  });
+  /* Al abrir la app, reenvía sola lo que quedó en cola. */
+  setTimeout(reenviarPendientes, 1500);
+  cerebroInput.addEventListener("change", function(){
+    cerebroURL = cerebroInput.value.trim();
+    try { localStorage.setItem(CLAVE_CEREBRO, cerebroURL); } catch (e) {}
+    pintarCerebro();
+  });
+  document.getElementById("btnProbarCerebro").addEventListener("click", function(ev){
+    ev.stopPropagation();
+    if (!cerebroURL) { decir("Primero pega la dirección de tu cerebro en Configuración, Cesar."); return; }
+    estadoCerebroEl.textContent = "Probando conexión con el cerebro…";
+    preguntarCerebro("Hola, soy Cesar. ¿Me escuchas? Contesta en una frase corta.")
+      .then(function(resp){
+        estadoCerebroEl.textContent = "Cerebro: conectado y respondiendo.";
+        decir(resp);
+      })
+      .catch(function(){
+        estadoCerebroEl.textContent = "Cerebro: no respondió. Revisa la dirección y que el servidor permita este origen.";
+        decir("No pude hablar con el cerebro, Cesar. Revisa la dirección en Configuración.");
+      });
+  });
+
+  var listaAlarmasEl = document.getElementById("listaAlarmas");
+  document.getElementById("btnVerAlarmas").addEventListener("click", function(){
+    var p = alarmasPendientes().sort(function(a, b){ return new Date(a.cuando) - new Date(b.cuando); });
+    listaAlarmasEl.innerHTML = "";
+    if (!p.length) { listaAlarmasEl.innerHTML = "<li>No hay recordatorios con hora pendientes.</li>"; return; }
+    p.forEach(function(a){
+      var li = document.createElement("li");
+      li.textContent = diaCorto(new Date(a.cuando)) + " " + horaCorta(new Date(a.cuando)) + (a.tipo === "cita" ? " (cita)" : "") + (a.diario ? " (todos los días)" : "") + " · " + a.texto + " ";
+      var b = document.createElement("button");
+      b.textContent = "Cancelar";
+      b.addEventListener("click", function(ev){
+        ev.stopPropagation();
+        var todas = cargar(CLAVE_ALARMAS);
+        todas.forEach(function(x){ if (x.id === a.id) x.hecho = true; });
+        guardar(CLAVE_ALARMAS, todas);
+        actualizarBloqueoPantalla();
+        document.getElementById("btnVerAlarmas").click();
+      });
+      li.appendChild(b);
+      listaAlarmasEl.appendChild(li);
+    });
+  });
+  var btnAvisosEl = document.getElementById("btnAvisos");
+  if (btnAvisosEl) btnAvisosEl.addEventListener("click", function(){ pedirPermisoAvisos(); });
+  pintarAvisos();
+  document.addEventListener("visibilitychange", function(){
+    if (!document.hidden) { actualizarBloqueoPantalla(); revisarAlarmas(); }
+  });
+  setInterval(revisarAlarmas, 20000);
+  setTimeout(revisarAlarmas, 3000);
+  setTimeout(actualizarBloqueoPantalla, 3500);
+
+  function seguir(x, y) {
+    var cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+    var dx = Math.max(-1, Math.min(1, (x - cx) / cx));
+    var dy = Math.max(-1, Math.min(1, (y - cy) / cy));
+    document.querySelectorAll(".pupila").forEach(function(p){
+      p.style.setProperty("--px", (dx * 22) + "px");
+      p.style.setProperty("--py", (dy * 26) + "px");
+    });
+  }
+  function parpadear() {
+    if (document.body.getAttribute("data-estado") !== "dormido") {
+      document.body.classList.add("parpadeo");
+      setTimeout(function(){ document.body.classList.remove("parpadeo"); }, 160);
+    }
+    setTimeout(parpadear, 3000 + Math.random() * 3000);
+  }
+  setTimeout(parpadear, 2500);
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    navigator.serviceWorker.register("orb-sw.js").catch(function(){});
+  }
+  mostrarEstado("dormido");
+  try { window.__orb = { procesar: procesar, cargar: cargar, guardar: guardar, cargarTareas: cargarTareas, cargarIdeas: cargarIdeas, cargarFoda: cargarFoda, alarmasPendientes: alarmasPendientes, revisarAlarmas: revisarAlarmas, reportePeriodo: reportePeriodo, totalGastos: totalGastos, totalIngresos: totalIngresos }; } catch (e) {}
+})();
+</script>
+</body>
+</html>
