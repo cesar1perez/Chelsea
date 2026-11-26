@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Orb — Fase 2.6 · Órbita de letras: Chelsea</title>
+<title>Orb — Fase 2.9 · Chelsea</title>
 <meta name="theme-color" content="#000000">
 <link rel="manifest" href="orb-manifest.json">
 <style>
@@ -67,17 +67,38 @@
   #orbita { display:none; position:fixed; inset:0; width:100vw; height:100vh; }
   body[data-cara="orbita"] #orbita { display:block; }
   body[data-cara="orbita"] .ojos { display:none; }
-  body[data-cara="orbita"] #despertar { color:rgba(190,255,220,.6); }
+  body[data-cara="orbita"] #despertar { color:rgba(255,246,232,.6); }
   /* Pulido 2.6b: con Órbita, la frase de abajo también es monoespaciada
      y con tracking, como las letras del canvas. */
-  body[data-cara="orbita"] #frase { font-family:ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace; letter-spacing:.05em; }
+  body[data-cara="orbita"] #frase { font-family:system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing:.06em; }
   #frase {
     position:fixed; left:0; right:0; bottom:9vh; text-align:center;
-    color:rgba(255,255,255,.75); font-size:16px; line-height:1.4; padding:0 20px;
+    color:rgba(255,246,232,.78); font-size:16px; line-height:1.4; padding:0 20px;
     opacity:0; transition:opacity .4s ease; pointer-events:none;
   }
   #frase.visible { opacity:1; }
-  #frase small { display:block; color:rgba(255,255,255,.45); font-size:13px; margin-top:4px; }
+  #frase small { display:block; color:rgba(255,246,232,.5); font-size:13px; margin-top:4px; }
+  /* Fase 2.9 — La foto de Chelsea: marco circular suave con su nombre
+     debajo, en overlay del DOM (nítida, no en el canvas). Fundidos
+     lentos de ~1 s. Si falta el archivo, solo queda su nombre. */
+  #fotoChelsea {
+    position:fixed; left:50%; top:42%; transform:translate(-50%,-50%) scale(.96);
+    opacity:0; transition:opacity 1s ease, transform 1s ease;
+    pointer-events:none; z-index:6; text-align:center;
+  }
+  #fotoChelsea.visible { opacity:1; transform:translate(-50%,-50%) scale(1); }
+  #fotoChelsea img {
+    width:min(56vw,300px); height:min(56vw,300px); object-fit:cover; border-radius:50%;
+    border:3px solid rgba(255,246,232,.55);
+    box-shadow:0 0 60px rgba(255,246,232,.35), 0 0 140px rgba(255,246,232,.12);
+  }
+  #fotoChelsea .nombre {
+    font-family:"Snell Roundhand","Segoe Script","Brush Script MT","Lucida Handwriting",cursive;
+    font-size:34px; color:#FFF6E8; margin-top:12px;
+    text-shadow:0 0 18px rgba(255,246,232,.5);
+  }
+  #fotoChelsea.sin-foto img { display:none; }
+  #fotoChelsea.sin-foto .nombre { font-size:54px; margin-top:0; }
   #despertar {
     position:fixed; left:0; right:0; bottom:4vh; text-align:center;
     color:rgba(255,255,255,.55); font-size:14px; pointer-events:none;
@@ -113,6 +134,7 @@
     <div class="ojo"><div class="pupila"></div></div>
   </div>
   <canvas id="orbita" aria-label="Órbita de letras de Chelsea"></canvas>
+  <div id="fotoChelsea" aria-label="Foto de Chelsea, la perrita"><img id="fotoChelseaImg" src="orb-chelsea.jpg" alt="Chelsea, la perrita" onerror="this.parentNode.classList.add('sin-foto')"><div class="nombre">Chelsea</div></div>
   <div id="frase"></div>
   <div id="despertar">Toca la pantalla una vez para despertarme.<br>Después ya no tocas nada, solo háblame.</div>
   <button id="menuBtn" aria-label="Configuración">⋮</button>
@@ -129,6 +151,9 @@
       <button data-cara="espiral">🌀 Espiral</button>
       <button data-cara="robot">🤖 Robot</button>
     </div>
+    <h3>🐾 Chelsea</h3>
+    <button id="btnVerChelsea">🐾 Ver a Chelsea</button>
+    <p style="color:rgba(255,255,255,.55);">Te muestra su foto de verdad, con su nombre, unos segundos. También aparece sola al abrir y cuando llevas un rato en reposo.</p>
     <h3>Color de fondo</h3>
     <div id="fondos">
       <button data-fondo="negro" class="activo">Negro</button>
@@ -252,6 +277,110 @@
          tenues a la deriva) y animación de entrada: los glifos vuelan
          desde los bordes y se acomodan en el anillo en ~1.2 s. */
       orbitaPolvo = [], orbitaIntroIni = 0, orbitaIntroDur = 1200;
+
+  /* Fase 2.9 — Chelsea, la perrita, con su foto de verdad. La silueta
+     de letras de la 2.7/2.8 no se parecía nada a ella, así que se quitó
+     del todo: sin puntos, sin máscara, sin homenaje de letras. En su
+     lugar, su foto real (orb-chelsea.jpg, que se sube junto al HTML)
+     aparece en un marco circular suave con su nombre debajo, con
+     fundidos lentos. Elegante y sin exagerar.
+     La foto vive en un overlay del DOM (#fotoChelsea), no en el canvas:
+     así se ve nítida y no depende del dibujo de letras. Si el archivo
+     no está (por ejemplo, abrió solo el HTML), el onerror esconde la
+     imagen y queda solo su nombre en letra elegante, nunca un icono
+     de imagen rota.
+     Solo queda una huellita dibujada (la de siempre) como marca de
+     agua: una sola, diminuta, al 7%, a la deriva detrás del anillo. */
+  var CHELSEA_CFG = { primeraMs: 30000, inactivoMs: 60000, autoMs: 5000, mostrarMs: 8000, esperaMs: 120000 };
+  var chelseaCargaIni = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+  var chelseaUltimaActividad = chelseaCargaIni;
+  var chelseaFotoFase = "oculta", chelseaFotoTimer = null,
+      chelseaProxima = 0, chelseaAutoHecha = false, chelseaForzada = false,
+      chelseaHuellaFase = 0;
+  var fotoChelseaEl = document.getElementById("fotoChelsea");
+  function chelseaAhora() { return (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now(); }
+  function chelseaInactiva() {
+    var e = document.body.getAttribute("data-estado");
+    return e === "dormido" || e === "atento" || e === "reposo";
+  }
+  function chelseaFotoVisible() { return chelseaFotoFase === "mostrando"; }
+  function chelseaFotoOcultar() {
+    if (chelseaFotoTimer) { clearTimeout(chelseaFotoTimer); chelseaFotoTimer = null; }
+    if (fotoChelseaEl) fotoChelseaEl.classList.remove("visible");
+    chelseaFotoFase = "oculta";
+    chelseaForzada = false;
+  }
+  function chelseaFotoMostrar(ms, forzada) {
+    if (!orbitaEsCara() || !fotoChelseaEl) return;
+    if (chelseaFotoTimer) { clearTimeout(chelseaFotoTimer); chelseaFotoTimer = null; }
+    chelseaForzada = !!forzada;
+    chelseaFotoFase = "mostrando";
+    fotoChelseaEl.classList.add("visible");
+    chelseaFotoTimer = setTimeout(function() {
+      chelseaFotoOcultar();
+      chelseaProxima = chelseaAhora() + CHELSEA_CFG.esperaMs;
+    }, ms);
+  }
+  /* Fase 2.8: motivo "habla" = la cancelación viene de que Chelsea está
+     hablando. Una foto pedida a propósito (botón o voz) sobrevive a su
+     propio saludo; un toque, el panel o empezar a escuchar sí la
+     cancelan siempre. */
+  function chelseaCancelar(motivo) {
+    if (chelseaForzada && motivo === "habla") return;
+    chelseaUltimaActividad = chelseaAhora();
+    if (chelseaFotoFase === "oculta") return;
+    chelseaFotoOcultar();
+  }
+  function chelseaFotoTick(t) {
+    if (typeof panel !== "undefined" && panel && panel.classList.contains("abierto")) {
+      if (chelseaFotoFase !== "oculta") chelseaCancelar();
+      return;
+    }
+    if (chelseaFotoFase !== "oculta") return;
+    if (!orbitaEsCara() || !chelseaInactiva()) return;
+    /* Una sola vez por carga, justo tras la entrada: su foto aparece
+       para que Cesar la vea sin tener que esperar en silencio. */
+    if (!chelseaAutoHecha) {
+      if (t >= orbitaIntroIni + orbitaIntroDur + 600) {
+        chelseaAutoHecha = true;
+        chelseaFotoMostrar(CHELSEA_CFG.autoMs, false);
+      }
+      return;
+    }
+    /* Reposo largo: 60 s sin actividad y al menos 120 s desde la
+       última vez que se mostró. */
+    if (t < chelseaCargaIni + CHELSEA_CFG.primeraMs) return;
+    if (t < chelseaProxima) return;
+    if (t - chelseaUltimaActividad < CHELSEA_CFG.inactivoMs) return;
+    chelseaFotoMostrar(CHELSEA_CFG.mostrarMs, false);
+  }
+  /* Mostrar a Chelsea a pedido: botón ⋮ o voz. Cambia a la cara Órbita
+     si hace falta, cierra el panel y muestra su foto ahora mismo. La
+     marca "forzada" hace que sobreviva a su propio saludo hablado; un
+     toque o abrir el panel la cancelan igual. */
+  function chelseaMostrarAhora() {
+    if (!orbitaEsCara()) {
+      document.body.setAttribute("data-cara", "orbita");
+      document.querySelectorAll("#caras button").forEach(function(x){ x.classList.toggle("activo", x.getAttribute("data-cara") === "orbita"); });
+      try { localStorage.setItem("orb_cara_v1", "orbita"); } catch (e) {}
+      actualizarCaraOrbita();
+    }
+    try { if (panel) panel.classList.remove("abierto"); } catch (e) {}
+    chelseaForzada = true;
+    chelseaAutoHecha = true;
+    chelseaUltimaActividad = chelseaAhora();
+    chelseaProxima = 0;
+    chelseaFotoMostrar(CHELSEA_CFG.mostrarMs, true);
+  }
+  function chelseaDibujarHuella(ctx, cx, cy, r, color) {
+    /* Huellita dibujada (no emoji): almohadilla + cuatro deditos. */
+    ctx.fillStyle = color || "#241a10";
+    ctx.beginPath(); ctx.ellipse(cx, cy + r * 0.28, r * 0.42, r * 0.34, 0, 0, Math.PI * 2); ctx.fill();
+    var dx = [-0.48, -0.17, 0.17, 0.48], dy = [-0.28, -0.42, -0.42, -0.28];
+    for (var k = 0; k < 4; k++) {
+      ctx.beginPath(); ctx.arc(cx + dx[k] * r, cy + dy[k] * r, r * 0.16, 0, Math.PI * 2); ctx.fill();
+    }
+  }
   function orbitaEsCara() { return document.body.getAttribute("data-cara") === "orbita"; }
   function orbitaCrearGlyphs() {
     orbitaGlyphs = [];
@@ -301,6 +430,8 @@
     orbitaCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   function orbitaEstado(n) {
+    /* Fase 2.9: cualquier cosa que no sea reposo cancela la foto de Chelsea. */
+    if (n !== "dormido" && n !== "atento" && n !== "reposo") chelseaCancelar(n === "hablando" ? "habla" : undefined);
     if (n === "escuchando") { orbitaVelObj = 0.55; orbitaBrilloObj = 1; orbitaAmbar = false; }
     else if (n === "aviso") { orbitaVelObj = 0.3; orbitaBrilloObj = 0.95; orbitaAmbar = true; }
     else if (n === "hablando") { orbitaVelObj = 0.18; orbitaBrilloObj = 0.85; orbitaAmbar = false; }
@@ -309,6 +440,7 @@
     else { orbitaVelObj = 0.05; orbitaBrilloObj = 0.3; orbitaAmbar = false; }
   }
   function orbitaDecir(txt) {
+    chelseaCancelar("habla");
     orbitaHablaTxt = txt || "";
     orbitaHablaIni = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
     orbitaHablando = true; orbitaDesvan = 0;
@@ -332,6 +464,7 @@
     if (!orbitaEsCara() || !orbitaCtx) return;
     var dt = orbitaUltimo ? Math.min(0.05, (t - orbitaUltimo) / 1000) : 0.016;
     orbitaUltimo = t;
+    chelseaFotoTick(t);
     /* Pulido 2.6b: velocidad y brillo llegan a su objetivo con easing
        (lerp), no de golpe; el anillo además respira despacio. */
     orbitaVel += (orbitaVelObj - orbitaVel) * 0.06;
@@ -355,14 +488,26 @@
       d.x += d.vx * dt; d.y += d.vy * dt;
       if (d.x < 0) d.x += 1; if (d.x > 1) d.x -= 1;
       if (d.y < 0) d.y += 1; if (d.y > 1) d.y -= 1;
-      ctx.fillStyle = "rgba(200,255,225," + (d.a * (0.6 + 0.4 * Math.sin(t / 800 + d.fase))).toFixed(3) + ")";
+      ctx.fillStyle = "rgba(245,237,224," + (d.a * (0.6 + 0.4 * Math.sin(t / 800 + d.fase))).toFixed(3) + ")";
       ctx.beginPath(); ctx.arc(d.x * orbitaAncho, d.y * orbitaAlto, d.r, 0, Math.PI * 2); ctx.fill();
     }
+    /* Fase 2.9 — Marca de agua: una sola huellita dibujada, diminuta,
+       al 7%, a la deriva despacio detrás del anillo, solo con la cara
+       Órbita. Apenas un susurro. */
+    chelseaHuellaFase += dt * 0.12;
+    var hx = (0.5 + 0.34 * Math.sin(chelseaHuellaFase)) * orbitaAncho;
+    var hy = (0.36 + 0.2 * Math.sin(chelseaHuellaFase * 0.7 + 1.3)) * orbitaAlto;
+    ctx.save();
+    ctx.globalAlpha = 0.07;
+    chelseaDibujarHuella(ctx, hx, hy, Math.max(10, Math.min(orbitaAncho, orbitaAlto) * 0.02), "rgb(255,246,232)");
+    ctx.restore();
     /* Texto hablado: posiciones de cada letra revelada, para que los
        glifos se alineen formando la frase. Máximo 3 líneas: si la
        respuesta es larga, las primeras se van desplazando. Cada letra
        nace con un fundido (al) y las líneas viejas se atenúan. */
-    var hablando = orbitaHablando || orbitaDesvan > 0;
+    /* Fase 2.9: mientras su foto se muestra, la línea de texto de la
+       respuesta en el anillo se pausa (no se solapa con la foto). */
+    var hablando = (orbitaHablando || orbitaDesvan > 0) && !chelseaFotoVisible();
     var tamLetra = Math.max(16, Math.min(24, orbitaAncho * 0.045));
     var anchoChar = tamLetra * 0.62;
     var maxAncho = Math.max(10, Math.floor(orbitaAncho * 0.86 / anchoChar));
@@ -395,7 +540,7 @@
     var latido = Math.exp(-7 * ciclo) + 0.55 * Math.exp(-7 * Math.max(0, ciclo - 0.22));
     var pulso = 1 + 0.09 * latido;
     var rNucleo = Math.max(26, Math.min(orbitaAncho, orbitaAlto) * 0.055) * pulso;
-    var colorNucleo = orbitaAmbar ? "255,190,80" : "150,255,200";
+    var colorNucleo = orbitaAmbar ? "255,190,80" : "255,246,232";
     var alfaNucleo = hablando ? 0.4 : 1;
     ctx.save();
     ctx.shadowColor = "rgba(" + colorNucleo + ",0.8)";
@@ -407,7 +552,7 @@
     ctx.globalAlpha = 0.9 * alfaNucleo;
     ctx.beginPath(); ctx.arc(cx, cy, rNucleo, 0, Math.PI * 2); ctx.fill();
     ctx.globalAlpha = alfaNucleo;
-    ctx.fillStyle = "#02120c";
+    ctx.fillStyle = "#241a10";
     ctx.font = "bold " + Math.round(rNucleo * 1.1) + "px system-ui, sans-serif";
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("C", cx, cy + 1);
@@ -437,11 +582,12 @@
         ta *= 0.25;
       }
       if (g.px === undefined) { g.px = tx; g.py = ty; }
-      g.px += (tx - g.px) * 0.12; g.py += (ty - g.py) * 0.12;
-      ctx.font = g.s + "px ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace";
-      ctx.fillStyle = orbitaAmbar ? "rgba(255,205,110," + ta.toFixed(3) + ")" : "rgba(185,255,220," + ta.toFixed(3) + ")";
+      var lerpF = 0.12;
+      g.px += (tx - g.px) * lerpF; g.py += (ty - g.py) * lerpF;
+      ctx.font = g.s + "px system-ui, -apple-system, 'Segoe UI', sans-serif";
+      ctx.fillStyle = orbitaAmbar ? "rgba(255,205,110," + ta.toFixed(3) + ")" : "rgba(255,246,232," + ta.toFixed(3) + ")";
       /* Solo los glifos más brillantes llevan glow: barato y se nota. */
-      if (ta > 0.8) { ctx.shadowColor = orbitaAmbar ? "rgba(255,205,110,0.9)" : "rgba(185,255,220,0.9)"; ctx.shadowBlur = 14; }
+      if (ta > 0.8) { ctx.shadowColor = orbitaAmbar ? "rgba(255,205,110,0.9)" : "rgba(255,246,232,0.9)"; ctx.shadowBlur = 14; }
       else ctx.shadowBlur = 0;
       ctx.fillText(tc, g.px, g.py);
     }
@@ -465,7 +611,8 @@
     if (orbitaCtx) orbitaCtx.clearRect(0, 0, orbitaAncho, orbitaAlto);
   }
   function actualizarCaraOrbita() {
-    if (orbitaEsCara()) { orbitaRedimensionar(); orbitaArrancar(true); } else orbitaParar();
+    if (orbitaEsCara()) { orbitaRedimensionar(); orbitaArrancar(true); }
+    else { orbitaParar(); chelseaFotoOcultar(); }
   }
   /* El bucle se pausa con la pestaña oculta (batería) y vuelve al mostrarse. */
   document.addEventListener("visibilitychange", function() {
@@ -477,11 +624,15 @@
      le da un giro extra al anillo, como un guiño. */
   if (orbitaCanvas) orbitaCanvas.addEventListener("pointerdown", function() {
     orbitaImpulso = 1;
+    chelseaCancelar();
     despertar();
   });
   orbitaCrearGlyphs();
   orbitaRedimensionar();
   actualizarCaraOrbita();
+  /* Gancho de prueba (no cambia nada en uso normal): deja ver y forzar
+     la foto de Chelsea desde fuera, para verificarlo sin esperar. */
+  try { window.__orbitaChelsea = { cfg: CHELSEA_CFG, fase: function(){ return chelseaFotoFase; }, visible: chelseaFotoVisible, cancelar: chelseaCancelar, mostrar: chelseaMostrarAhora, auto: function(){ return chelseaAutoHecha; }, estado: function(n){ mostrarEstado(n); }, forzar: function(){ chelseaUltimaActividad = chelseaAhora() - CHELSEA_CFG.inactivoMs - 1; chelseaProxima = 0; } }; } catch (e) {}
 
   var vozElegida = null, velocidad = 0.95;
   try {
@@ -928,6 +1079,11 @@
     var m;
     if (/c[oó]mo voy hoy|c[oó]mo va mi d[ií]a|resumen del d[ií]a|resumen de hoy|qu[eé] hice hoy|qu[eé] llevo hoy/.test(f)) return resumenDia();
     if (/c[oó]mo voy (?:esta )?semana|resumen de la semana|gastos de la semana|qu[eé] gast[eé] esta semana/.test(f)) return resumenSemana();
+    /* Fase 2.9 — Ver a Chelsea: muestra su foto de verdad y saluda. */
+    if (/mu[eé]strame a chelsea|ens[eé][ñn]ame a chelsea|d[oó]nde est[aá] chelsea|ver a chelsea/.test(f)) {
+      chelseaMostrarAhora();
+      return "Aquí estoy, Cesar. Siempre contigo.";
+    }
     /* Fase 2.5 — FODA: cancelar, contestar en sesión, empezar, agregar, leer. */
     if (/cancela mi foda|termina el foda|salir del foda|sal del foda/.test(f)) {
       fodaSesion = null;
@@ -1306,6 +1462,7 @@
     btnPausa.textContent = "▶ Reanudar escucha";
   }
   function despertar() {
+    chelseaCancelar();
     if (despertarHecho && activo) return;
     despertarHecho = true;
     despertarEl.style.display = "none";
@@ -1341,6 +1498,11 @@
       try { localStorage.setItem("orb_cara_v1", b.getAttribute("data-cara")); } catch (e) {}
       actualizarCaraOrbita();
     });
+  });
+  /* Fase 2.9 — Botón "Ver a Chelsea": muestra su foto ahora mismo. */
+  document.getElementById("btnVerChelsea").addEventListener("click", function(){
+    panel.classList.remove("abierto");
+    chelseaMostrarAhora();
   });
   document.querySelectorAll("#fondos button").forEach(function(b){
     b.addEventListener("click", function(){
