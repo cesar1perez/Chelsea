@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Orb — Fase 2.17 · Chelsea</title>
+<title>Orb — Fase 2.18 · Chelsea</title>
 <meta name="theme-color" content="#0E0C0A">
 <link rel="manifest" href="orb-manifest.json">
 <!-- Fase 2.16 — Tipografía editorial: Fraunces (serif de display) +
@@ -259,7 +259,7 @@
     <ul id="listaAlarmas"></ul>
     <h3>Ingresos y reportes (Fase 2.5, motivo en la 2.11)</h3>
     <p>Dile: <b>“Chelsea, registra un ingreso de 5000 de sueldo”</b> o <b>“Chelsea, me pagaron 2000 de freelance”</b>. Y pide <b>“Chelsea, reporte de la semana”</b>, <b>“Chelsea, reporte del mes”</b> o <b>“Chelsea, reporte del año”</b>: te dice ingresos, gastos, balance y tu gasto más grande de ese periodo. Solo lee lo que registraste, no inventa nada. Todo va también a tu Sheet si la tienes conectada.</p>
-    <p><b>Motivo:</b> agrégale el porqué a un gasto o ingreso: <b>“Chelsea, anota un gasto de 200 de gasolina porque fui a Querétaro”</b> o <b>“Chelsea, registra un ingreso de 5000 de sueldo, motivo: aguinaldo”</b>. El motivo queda guardado con el registro y en tu Sheet (columna Nota). El reporte ahora te desglosa tus 3 conceptos más grandes y tus motivos más frecuentes, para que te analices. Y pregúntame: <b>“Chelsea, ¿en qué gasté más este mes?”</b> o <b>“Chelsea, ¿por qué gasté en gasolina este mes?”</b>.</p>
+    <p><b>Motivo:</b> agrégale el porqué a un gasto o ingreso: <b>“Chelsea, anota un gasto de 200 de gasolina porque fui a Querétaro”</b> o <b>“Chelsea, registra un ingreso de 5000 de sueldo, motivo: aguinaldo”</b>. El motivo queda guardado con el registro y en tu Sheet (columna Nota). El reporte ahora te desglosa tus 3 conceptos más grandes y tus motivos más frecuentes, para que te analices. Y pregúntame: <b>“Chelsea, ¿en qué gasté más este mes?”</b> o <b>“Chelsea, ¿por qué gasté en gasolina este mes?”</b>. También entiende los montos en palabras: <b>“Chelsea, apunta un gasto de treinta pesos en tacos”</b> funciona igual que con 30.</p>
     <h3>Lo que vas aprendiendo (Fase 2.11)</h3>
     <p>Dile: <b>“Chelsea, guarda este punto: el café sube si el agua está a 92 grados”</b>, <b>“Chelsea, guarda esto que investigué: la fotosíntesis usa clorofila”</b> o <b>“Chelsea, guarda este aprendizaje: vender es escuchar primero”</b>. Después pregúntale <b>“Chelsea, ¿qué puntos guardé esta semana?”</b>, <b>“Chelsea, ¿qué aprendí hoy?”</b> o <b>“Chelsea, ¿qué aprendí esta semana?”</b> y te los lee. Si el cerebro está conectado, también le cuenta tus puntos guardados, para que platiquen de lo que vas aprendiendo.</p>
     <h3>Alertas y recomendaciones (Fase 2.12)</h3>
@@ -1528,11 +1528,13 @@
     return { cuando: new Date(Date.now() + n * mult), resto: txt.replace(m[0], " ").replace(/^\s*(que|de)\s+/, "").trim() };
   }
   function parseALas(txt) {
-    var m = txt.match(/(mañana|hoy)?\s*a las\s+(\d{1,2})(?::(\d{2}))?\s*(de la mañana|de la tarde|de la noche|del mediodía|de la madrugada|am|pm|a\.m\.|p\.m\.)?/);
+    /* Fase 2.18 — "a las diez y media" / "y cuarto": el "y media" y el
+       "y cuarto" se consumen aquí para que no queden en el resto. */
+    var m = txt.match(/(mañana|hoy)?\s*a las\s+(\d{1,2})(?::(\d{2}))?\s*(?:y (media|cuarto))?\s*(de la mañana|de la tarde|de la noche|del mediodía|de la madrugada|am|pm|a\.m\.|p\.m\.)?/);
     if (!m) return null;
-    var h = parseInt(m[2], 10), min = m[3] ? parseInt(m[3], 10) : 0;
+    var h = parseInt(m[2], 10), min = m[4] === "media" ? 30 : m[4] === "cuarto" ? 15 : (m[3] ? parseInt(m[3], 10) : 0);
     if (h > 23 || min > 59) return null;
-    var q = (m[4] || "").replace(/\./g, "");
+    var q = (m[5] || "").replace(/\./g, "");
     if ((q === "pm" || /tarde|noche/.test(q)) && h < 12) h += 12;
     if ((q === "am" || /mañana|madrugada/.test(q)) && h === 12) h = 0;
     if (/mediod/.test(q)) h = 12;
@@ -1787,8 +1789,70 @@
      sigue funcionando sin palabra de activación. Devuelve el texto sin
      el prefijo (y sin la coma, dos puntos o punto que lo siga), o null
      si no empieza por Chelsea o si no queda nada después del nombre. */
+  /* Fase 2.18 — Números en palabras: Chrome a veces devuelve "treinta"
+     en lugar de "30" y el regex de montos (\d+) fallaba sin que Cesar
+     viera qué se escuchó. Convierte secuencias de palabras numéricas
+     (1–9999) a dígitos. NO toca "un"/"una" (artículos de los comandos:
+     "apunta un gasto", "agenda una cita"), salvo "un" antes de "mil".
+     "y" solo une decenas con unidades ("treinta y cinco"); "punto" o
+     "coma" seguidos de unidades dan decimales ("treinta punto cinco"
+     → 30.5). */
+  var NUM_PALABRAS = {
+    cero: 0, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6,
+    siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12,
+    trece: 13, catorce: 14, quince: 15, dieciseis: 16, "dieciséis": 16,
+    diecisiete: 17, dieciocho: 18, diecinueve: 19, veinte: 20,
+    veintiuno: 21, veintiun: 21, "veintiún": 21, veintidos: 22,
+    "veintidós": 22, veintitres: 23, "veintitrés": 23, veinticuatro: 24,
+    veinticinco: 25, veintiseis: 26, "veintiséis": 26, veintisiete: 27,
+    veintiocho: 28, veintinueve: 29, treinta: 30, cuarenta: 40,
+    cincuenta: 50, sesenta: 60, setenta: 70, ochenta: 80, noventa: 90,
+    cien: 100, ciento: 100, doscientos: 200, trescientos: 300,
+    cuatrocientos: 400, quinientos: 500, seiscientos: 600,
+    setecientos: 700, ochocientos: 800, novecientos: 900, mil: 1000
+  };
+  function numeroEnPalabras(txt) {
+    var partes = String(txt || "").split(" ");
+    var salida = [];
+    var total = 0, actual = 0, enNumero = false;
+    function vaciar() {
+      if (!enNumero) return;
+      salida.push(String(total + actual));
+      total = 0; actual = 0; enNumero = false;
+    }
+    function esNum(w) { return Object.prototype.hasOwnProperty.call(NUM_PALABRAS, w); }
+    for (var i = 0; i < partes.length; i++) {
+      var w = partes[i];
+      if (w === "un" && partes[i + 1] === "mil") { total += 1000; enNumero = true; i++; continue; }
+      if (w === "y" && enNumero && ((actual >= 30 && actual % 10 === 0) || (total > 0 && actual === 0))) continue;
+      if (w === "punto" || w === "coma") {
+        var dec = "", j = i + 1;
+        while (j < partes.length && esNum(partes[j]) && NUM_PALABRAS[partes[j]] >= 0 && NUM_PALABRAS[partes[j]] <= 9) { dec += String(NUM_PALABRAS[partes[j]]); j++; }
+        if (enNumero && dec) {
+          salida.push(String(total + actual) + "." + dec);
+          total = 0; actual = 0; enNumero = false;
+          i = j - 1; continue;
+        }
+        vaciar(); salida.push(w); continue;
+      }
+      if (esNum(w)) {
+        var v = NUM_PALABRAS[w];
+        enNumero = true;
+        if (v === 1000) { total += (actual || 1) * 1000; actual = 0; }
+        else { actual += v; }
+        continue;
+      }
+      vaciar();
+      salida.push(w);
+    }
+    vaciar();
+    return salida.join(" ");
+  }
+
   function extraerOrdenChelsea(texto) {
-    var m = String(texto || "").match(/^[\s¡¿]*chelsea\b\s*[,:\.]?\s*/i);
+    /* Fase 2.18 — "eh, Chelsea…", "oye Chelsea…", "hola Chelsea…":
+       los titubeos antes del nombre ya no bloquean la orden. */
+    var m = String(texto || "").match(/^[\s¡¿]*(?:(?:eh|oye|mmm|este|bueno|hola|por favor)[\s,:\.]+)*chelsea\b\s*[,:\.]?\s*/i);
     if (!m) return null;
     var resto = String(texto || "").slice(m[0].length);
     if (!resto.trim()) return null;
@@ -1800,6 +1864,11 @@
     var orden = extraerOrdenChelsea(fraseOriginal);
     if (orden === null) return null;
     var f = (" " + orden.toLowerCase() + " ").replace(/[.,;!?¿¡]/g, " ");
+    /* Fase 2.18 — Números en palabras ("treinta" → 30) y rellenos
+       ("por favor", "porfa") fuera, antes de buscar los comandos: así
+       lo que Chrome devuelve en letras se entiende igual que en
+       dígitos. "un"/"una" no se tocan (son artículos). */
+    f = numeroEnPalabras(f).replace(/\bpor favor\b/g, " ").replace(/\bporfa\b/g, " ").replace(/\s+/g, " ");
     var m;
     if (/c[oó]mo voy hoy|c[oó]mo va mi d[ií]a|resumen del d[ií]a|resumen de hoy|qu[eé] hice hoy|qu[eé] llevo hoy/.test(f)) return resumenDia();
     if (/c[oó]mo voy (?:esta )?semana|resumen de la semana|gastos de la semana|qu[eé] gast[eé] esta semana/.test(f)) return resumenSemana();
@@ -1869,7 +1938,7 @@
       if (!sig) return "Guardando... listo, Cesar. Terminamos tu FODA. " + leerFoda();
       return "Guardando... listo. " + sig;
     }
-    if (/(?:empezar|iniciar|empecemos|hazme|empieza)\s+(?:mi\s+)?foda/.test(f)) {
+    if (/(?:empezar|iniciar|empecemos|hagamos|hazme|empieza)\s+(?:mi\s+|el\s+)?foda/.test(f)) {
       fodaSesion = { cuadrante: 0, pregunta: 0 };
       return "Vamos a armar tu FODA, Cesar. Te hago dos preguntas cortas por cada parte y tú me contestas con voz. Primera: " + preguntaFoda();
     }
@@ -1900,8 +1969,20 @@
       mostrarEstado("aviso");
       return "Guardando... listo, Cesar. Anoté un ingreso de " + montoP + " pesos de " + conceptoP + (resP.motivo ? (resP.forma === "porque" ? ", porque " + resP.motivo : ", motivo: " + resP.motivo) : "") + ". Llevas " + totalIngresos() + " pesos de ingresos anotados.";
     }
+    /* Fase 2.18 — "recibí 5000 de sueldo" y "me depositaron 5000":
+       solo con "pesos" o con concepto ("de/en ..."), para que un
+       "recibí 2 mensajes" no se guarde como ingreso. */
+    m = f.match(/(?:recib[ií]|me depositaron|me depositó)\s+(?:un\s+)?(?:ingreso|pago|dep[oó]sito)?(?: de)?\s*(\d+(?:[.,]\d+)?)(?:\s+(?:pesos|mxn)(?:\s+(?:de|en)\s+(.+))?|\s+(?:de|en)\s+(.+))/);
+    if (m) {
+      var montoR = parseFloat(m[1].replace(",", "."));
+      var resR = extraerMotivo(((m[2] || m[3]) || "sin concepto").trim());
+      var conceptoR = resR.texto || "sin concepto";
+      guardarEntrada("ingreso", conceptoR, montoR, resR.motivo || null, resR.motivo || null);
+      mostrarEstado("aviso");
+      return "Guardando... listo, Cesar. Anoté un ingreso de " + montoR + " pesos de " + conceptoR + (resR.motivo ? (resR.forma === "porque" ? ", porque " + resR.motivo : ", motivo: " + resR.motivo) : "") + ". Llevas " + totalIngresos() + " pesos de ingresos anotados.";
+    }
     /* Fase 2.5 — Reportes semanales, mensuales y anuales. */
-    m = f.match(/reporte (?:de la |del )?(semana|mes|a[ñn]o)|reporte (semanal|mensual|anual)/);
+    m = f.match(/reporte (?:de la |del |de este |de esta |de |de los )?(?:gastos (?:de la |del |de este |de esta |de )?)?(semana|mes|a[ñn]o)|reporte (semanal|mensual|anual)/);
     if (m) {
       var per = (m[1] || m[2] || "").toLowerCase();
       var periodo = /semanal|semana/.test(per) ? "semana" : /mensual|mes/.test(per) ? "mes" : "año";
@@ -1947,7 +2028,9 @@
        números reales, nada inventado. */
     if (/c[oó]mo (?:voy|van) (?:con|de) mis gastos/.test(f)) return resumenGastosMes();
     if (/recomendaciones para (?:el )?pr[oó]ximo mes|qu[eé] me recomiendas para (?:el )?pr[oó]ximo mes|dame recomendaciones|recomi[eé]ndame/.test(f)) return recomendacionesProximoMes();
-    if (/mis ingresos|cu[aá]nto (?:llevo|he ganado|gan[eé])|total de ingresos/.test(f)) {
+    /* Fase 2.18 — "cuánto llevo gastado" no debe contestar con los
+       ingresos: "cuánto llevo" solo vale aquí si no habla de gastos. */
+    if (/mis ingresos|cu[aá]nto (?:llevo|he ganado|gan[eé])|total de ingresos/.test(f) && !/gast/.test(f)) {
       return "Llevas " + totalIngresos() + " pesos en ingresos anotados.";
     }
     m = f.match(/gasto(?: de)?\s+(\d+(?:[.,]\d+)?)(?:\s*(?:pesos|mxn))?(?:\s*(?:de|en)\s*(.+))?/);
@@ -1959,8 +2042,37 @@
       mostrarEstado("aviso");
       return "Guardando... listo, Cesar. Anoté un gasto de " + monto + " pesos de " + concepto + (resG.motivo ? (resG.forma === "porque" ? ", porque " + resG.motivo : ", motivo: " + resG.motivo) : "") + ". Llevas " + totalGastos() + " pesos anotados." + alertasAlGuardarGasto(monto);
     }
+    /* Fase 2.18 — "gasté 30 pesos en tacos" y "apunta 30 pesos en
+       tacos" (sin la palabra "gasto"): el reconocimiento a veces
+       devuelve la frase sin "gasto". Solo con monto y "pesos" o con
+       concepto ("de/en ..."), para que "gasté 2 horas" no se guarde
+       como gasto. Y si el concepto suena a ingreso ("sueldo",
+       "freelance"...), se guarda como ingreso, no como gasto. */
+    m = f.match(/(?:me\s+)?gast[eé]\s+(\d+(?:[.,]\d+)?)(?:\s+(?:pesos|mxn)(?:\s+(?:de|en)\s+(.+))?|\s+(?:de|en)\s+(.+))/);
+    if (m) {
+      var montoG2 = parseFloat(m[1].replace(",", "."));
+      var resG2 = extraerMotivo(((m[2] || m[3]) || "sin concepto").trim());
+      var conceptoG2 = resG2.texto || "sin concepto";
+      guardarEntrada("gasto", conceptoG2, montoG2, resG2.motivo || null, resG2.motivo || null);
+      mostrarEstado("aviso");
+      return "Guardando... listo, Cesar. Anoté un gasto de " + montoG2 + " pesos de " + conceptoG2 + (resG2.motivo ? (resG2.forma === "porque" ? ", porque " + resG2.motivo : ", motivo: " + resG2.motivo) : "") + ". Llevas " + totalGastos() + " pesos anotados." + alertasAlGuardarGasto(montoG2);
+    }
+    m = f.match(/(?:apunta|anota|registra)\s+(?:un\s+)?(\d+(?:[.,]\d+)?)\s+(?:pesos|mxn)\s+(?:de|en)\s+(.+)/);
+    if (m) {
+      var montoG3 = parseFloat(m[1].replace(",", "."));
+      var resG3 = extraerMotivo(m[2].trim());
+      var conceptoG3 = resG3.texto || "sin concepto";
+      if (/sueldo|salario|quincena|n[oó]mina|freelance|aguinaldo|venta|ingreso/.test(conceptoG3.toLowerCase())) {
+        guardarEntrada("ingreso", conceptoG3, montoG3, resG3.motivo || null, resG3.motivo || null);
+        mostrarEstado("aviso");
+        return "Guardando... listo, Cesar. Anoté un ingreso de " + montoG3 + " pesos de " + conceptoG3 + (resG3.motivo ? (resG3.forma === "porque" ? ", porque " + resG3.motivo : ", motivo: " + resG3.motivo) : "") + ". Llevas " + totalIngresos() + " pesos de ingresos anotados.";
+      }
+      guardarEntrada("gasto", conceptoG3, montoG3, resG3.motivo || null, resG3.motivo || null);
+      mostrarEstado("aviso");
+      return "Guardando... listo, Cesar. Anoté un gasto de " + montoG3 + " pesos de " + conceptoG3 + (resG3.motivo ? (resG3.forma === "porque" ? ", porque " + resG3.motivo : ", motivo: " + resG3.motivo) : "") + ". Llevas " + totalGastos() + " pesos anotados." + alertasAlGuardarGasto(montoG3);
+    }
     /* Fase 2.5 — Citas con alarma y aviso, como un recordatorio. */
-    m = f.match(/(?:agenda|programa|pon)\s+(?:una\s+)?cita\s+(.+)/);
+    m = f.match(/(?:agenda|programa|pon|anota|apunta|agrega)\s+(?:una\s+)?cita\s+(.+)/);
     if (m) {
       var restoCita = m[1].trim();
       var citaHora = parseCita(restoCita);
@@ -1982,7 +2094,7 @@
       return "Tienes " + citasDia.length + " cita(s) " + (mananaQ ? "mañana" : "hoy") + ": " + citasDia.map(function(a){ return horaCorta(new Date(a.cuando)) + " — " + a.texto; }).join("; ") + ".";
     }
     /* Fase 2.5 — Tareas pendientes y hechas. */
-    m = f.match(/^\s*(?:anota (?:la )?tarea|nueva tarea|tarea)[:\s]+(.+)/);
+    m = f.match(/^\s*(?:(?:anota|a nota|apunta|a punta|agrega|registra)\s+(?:la\s+)?tarea|nueva tarea|tarea)[:\s]+(.+)/);
     if (m) {
       var restoTarea = m[1].trim();
       var horaTarea = parseHoraRecordatorio(restoTarea);
@@ -2005,26 +2117,26 @@
       return "No encontré una tarea pendiente que diga eso, Cesar. Dime: ¿qué tareas tengo pendientes? y te las leo.";
     }
     /* Fase 2.5 — Ideas y proyectos con seguimiento. */
-    m = f.match(/guarda (?:la )?idea\s+(.+)/);
+    m = f.match(/(?:guarda|apunta|anota) (?:la )?idea\s+(.+)/);
     if (m) {
       guardarIdea(m[1].trim());
       mostrarEstado("aviso");
       return "Guardando... listo, Cesar. Guardé tu idea: " + m[1].trim() + ".";
     }
-    m = f.match(/(?:crea (?:el )?proyecto|nuevo proyecto)\s+(.+)/);
+    m = f.match(/(?:crea (?:el |un )?proyecto|nuevo proyecto)\s+(.+)/);
     if (m) {
       var pNuevo = crearProyecto(m[1].trim());
       mostrarEstado("aviso");
       return "Guardando... listo, Cesar. Creé el proyecto " + pNuevo.nombre + ", en estado activo. Cuando avances, dime: avance del proyecto " + pNuevo.nombre + ": y lo que hiciste.";
     }
-    m = f.match(/avance (?:del )?proyecto\s+(.+?)\s*[:\-]\s*(.+)/);
+    m = f.match(/avance (?:del |en el )?proyecto\s+(.+?)\s*[:\-]\s*(.+)/);
     if (m) {
       var pav = agregarAvance(m[1].trim(), m[2].trim());
       if (!pav) return "No encontré un proyecto que se llame así, Cesar. Dime: ¿qué proyectos tengo? y te los leo.";
       mostrarEstado("aviso");
       return "Guardando... listo, Cesar. Anoté el avance en " + pav.nombre + ": " + m[2].trim() + ".";
     }
-    m = f.match(/c[oó]mo va (?:el )?proyecto\s+(.+)/);
+    m = f.match(/c[oó]mo va (?:el |mi )?proyecto\s+(.+)/);
     if (m) {
       var pv = buscarProyecto(m[1].trim());
       if (!pv) return "No encontré un proyecto que se llame así, Cesar. Dime: ¿qué proyectos tengo? y te los leo.";
@@ -2052,7 +2164,7 @@
        consulta. Funciona en local aunque no haya cerebro; el punto
        también queda en tu registro (tipo "aprendizaje") y en Sheets,
        y el cerebro lo ve entre tus últimos registros. */
-    m = f.match(/guarda (?:este )?punto(?: que (?:investigu[eé]|hablamos|aprendimos|vimos|estudiamos))?[:\s]+(.+)/);
+    m = f.match(/(?:guarda|apunta|anota) (?:este |un )?punto(?: que (?:investigu[eé]|hablamos|aprendimos|vimos|estudiamos))?[:\s]+(.+)/);
     if (m && m[1].trim()) {
       guardarPunto(m[1].trim());
       mostrarEstado("aviso");
@@ -2070,7 +2182,7 @@
       mostrarEstado("aviso");
       return "Guardando... listo. Punto guardado.";
     }
-    if (/qu[eé] puntos guard[eé]|qu[eé] aprend[ií]/.test(f)) {
+    if (/qu[eé] puntos (?:guard[eé]|tengo)|qu[eé] aprend[ií]/.test(f)) {
       var perA = /hoy/.test(f) ? "hoy" : /este mes|el mes/.test(f) ? "mes" : "semana";
       var cuandoA = perA === "hoy" ? "hoy" : perA === "mes" ? "este mes" : "esta semana";
       var puntosA = cargarAprendizaje().filter(function(p){
@@ -2083,7 +2195,7 @@
       var ultimosA = puntosA.slice(-5).map(function(p){ return p.texto; });
       return "Guardaste " + puntosA.length + " punto(s) " + cuandoA + (puntosA.length > 5 ? ". Te leo los últimos 5" : "") + ": " + ultimosA.join("; ") + ".";
     }
-    m = f.match(/(?:recu[eé]rdame|recuerda|agenda)\s+(.+)/);
+    m = f.match(/(?:recu[eé]rdame|recuerda|agenda|av[ií]same)\s+(.+)/);
     if (m) {
       var conHora = parseHoraRecordatorio(m[1].trim());
       if (conHora && conHora.resto) {
@@ -2113,7 +2225,7 @@
       if (!p2.length) return "No tienes recordatorios con hora pendientes, Cesar. Dime: recuérdame en 5 minutos que… y te lo pongo.";
       return "Tienes " + p2.length + " recordatorio(s) con hora: " + p2.map(function(a){ return diaCorto(new Date(a.cuando)) + " " + horaCorta(new Date(a.cuando)) + (a.tipo === "cita" ? " (cita)" : "") + (a.diario ? " (todos los días)" : "") + " — " + a.texto; }).join("; ") + ".";
     }
-    m = f.match(/(?:guarda (?:esta )?nota|anota|nota)[:\s]+(.+)/);
+    m = f.match(/(?:guarda (?:esta )?nota|anota|apunta|nota)[:\s]+(.+)/);
     if (m) {
       guardarEntrada("nota", m[1].trim(), null);
       mostrarEstado("aviso");
@@ -2176,10 +2288,15 @@
       return "Yo también te aprecio, Cesar. Aquí estoy, solo para ti.";
     }
     var ultimas = r.slice(-2).map(function(e){ return e.texto; });
+    /* Fase 2.18 — Eco de lo escuchado: si no entendió el comando,
+       repite el texto tal como lo escuchó, para que Cesar vea si fue
+       un error de oído ("treinta" en lugar de "30") y lo repita. */
+    var ecoTxt = String(fraseOriginal || "").trim();
+    var eco = ecoTxt ? " Te escuché decir: «" + ecoTxt + "»." : "";
     if (ultimas.length) {
-      return "Te escuché, Cesar. Eso no es un gasto, una nota ni un recordatorio, así que no lo guardé. Lo último que me anotaste fue: " + ultimas[ultimas.length - 1] + ". ¿Quieres que esto lo guarde como nota?";
+      return "Te escuché, Cesar. Eso no es un gasto, una nota ni un recordatorio, así que no lo guardé." + eco + " Lo último que me anotaste fue: " + ultimas[ultimas.length - 1] + ". ¿Quieres que esto lo guarde como nota?";
     }
-    return "Te escuché, Cesar. Eso no es un gasto, una nota ni un recordatorio, así que no lo guardé. Si quieres, dime: guarda la nota, y lo que sigue.";
+    return "Te escuché, Cesar. Eso no es un gasto, una nota ni un recordatorio, así que no lo guardé." + eco + " Si quieres, dime: guarda la nota, y lo que sigue.";
   }
 
   /* Lo que el cerebro recibe para conocerte: resumen de tu registro
@@ -2849,7 +2966,7 @@
     navigator.serviceWorker.register("orb-sw.js").catch(function(){});
   }
   mostrarEstado("dormido");
-  try { window.__orb = { mostrarFrase: mostrarFrase, ocultarFrase: ocultarFrase, procesar: procesar, ordenChelsea: extraerOrdenChelsea, cargar: cargar, guardar: guardar, cargarTareas: cargarTareas, cargarIdeas: cargarIdeas, cargarFoda: cargarFoda, alarmasPendientes: alarmasPendientes, revisarAlarmas: revisarAlarmas, reportePeriodo: reportePeriodo, totalGastos: totalGastos, totalIngresos: totalIngresos, cargarAprendizaje: cargarAprendizaje, guardarPunto: guardarPunto, extraerMotivo: extraerMotivo, motivoDe: motivoDe, contextoParaCerebro: contextoParaCerebro, resumenMesGastos: resumenMesGastos, textoComparacionMes: textoComparacionMes, bloqueAlertaMes: bloqueAlertaMes, alertasAlGuardarGasto: alertasAlGuardarGasto, resumenGastosMes: resumenGastosMes, recomendacionesProximoMes: recomendacionesProximoMes, ultimoMesConGastos: ultimoMesConGastos, mesAnterior: mesAnterior, nombreMes: nombreMes, restaurarDesdeSheets: restaurarDesdeSheets, fusionarRespaldo: fusionarRespaldo, reconstruirDesdeRegistro: reconstruirDesdeRegistro, parsearFechaRespaldo: parsearFechaRespaldo, parsearCuandoCita: parsearCuandoCita, tituloSinHora: tituloSinHora, firmaRegistroLocal: firmaRegistroLocal, buscarIdeaProyecto: buscarIdeaProyecto, mejorarIdea: mejorarIdea, guardarMejoraPendiente: guardarMejoraPendiente, descartarMejora: descartarMejora, guardarMejoraEnIdea: guardarMejoraEnIdea, mejoraPendiente: function(){ return mejoraPendiente; }, datosExcel: datosExcel, contarDatosExcel: contarDatosExcel, resumenExcel: resumenExcel, mensajeExcelVacio: mensajeExcelVacio, etiquetaExcel: etiquetaExcel, nombreArchivoExcel: nombreArchivoExcel, generarExcel: generarExcel, cargarSheetJS: cargarSheetJS, csvDesdeHojas: csvDesdeHojas, csvCelda: csvCelda, fechaExcel: fechaExcel, preguntarCerebroConTiempo: preguntarCerebroConTiempo }; } catch (e) {}
+  try { window.__orb = { mostrarFrase: mostrarFrase, ocultarFrase: ocultarFrase, procesar: procesar, ordenChelsea: extraerOrdenChelsea, cargar: cargar, guardar: guardar, cargarTareas: cargarTareas, cargarIdeas: cargarIdeas, cargarFoda: cargarFoda, alarmasPendientes: alarmasPendientes, revisarAlarmas: revisarAlarmas, reportePeriodo: reportePeriodo, totalGastos: totalGastos, totalIngresos: totalIngresos, cargarAprendizaje: cargarAprendizaje, guardarPunto: guardarPunto, extraerMotivo: extraerMotivo, numeroEnPalabras: numeroEnPalabras, responderLocal: responderLocal, motivoDe: motivoDe, contextoParaCerebro: contextoParaCerebro, resumenMesGastos: resumenMesGastos, textoComparacionMes: textoComparacionMes, bloqueAlertaMes: bloqueAlertaMes, alertasAlGuardarGasto: alertasAlGuardarGasto, resumenGastosMes: resumenGastosMes, recomendacionesProximoMes: recomendacionesProximoMes, ultimoMesConGastos: ultimoMesConGastos, mesAnterior: mesAnterior, nombreMes: nombreMes, restaurarDesdeSheets: restaurarDesdeSheets, fusionarRespaldo: fusionarRespaldo, reconstruirDesdeRegistro: reconstruirDesdeRegistro, parsearFechaRespaldo: parsearFechaRespaldo, parsearCuandoCita: parsearCuandoCita, tituloSinHora: tituloSinHora, firmaRegistroLocal: firmaRegistroLocal, buscarIdeaProyecto: buscarIdeaProyecto, mejorarIdea: mejorarIdea, guardarMejoraPendiente: guardarMejoraPendiente, descartarMejora: descartarMejora, guardarMejoraEnIdea: guardarMejoraEnIdea, mejoraPendiente: function(){ return mejoraPendiente; }, datosExcel: datosExcel, contarDatosExcel: contarDatosExcel, resumenExcel: resumenExcel, mensajeExcelVacio: mensajeExcelVacio, etiquetaExcel: etiquetaExcel, nombreArchivoExcel: nombreArchivoExcel, generarExcel: generarExcel, cargarSheetJS: cargarSheetJS, csvDesdeHojas: csvDesdeHojas, csvCelda: csvCelda, fechaExcel: fechaExcel, preguntarCerebroConTiempo: preguntarCerebroConTiempo }; } catch (e) {}
 })();
 </script>
 </body>
