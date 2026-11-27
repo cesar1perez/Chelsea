@@ -3,23 +3,46 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Orb — Fase 2.9 · Chelsea</title>
-<meta name="theme-color" content="#000000">
+<title>Orb — Fase 2.16 · Chelsea</title>
+<meta name="theme-color" content="#0E0C0A">
 <link rel="manifest" href="orb-manifest.json">
+<!-- Fase 2.16 — Tipografía editorial: Fraunces (serif de display) +
+     Inter (grotesca de interfaz), con display=swap. Sin internet, los
+     fallbacks del sistema (Georgia / system-ui) mantienen el diseño. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* Fase 2.16 — Paleta directiva: tinta cálida, marfil, latón champaña.
+     Una sola acentuación metálica, usada con mesura: estados activos,
+     filetes, el núcleo y botones clave. Nada de colores planos
+     brillantes ni bordes gruesos. */
+  :root {
+    --tinta:#0E0C0A;
+    --marfil:#F5EDDF;
+    --marfil-suave:rgba(245,237,223,.88);
+    --marfil-tenue:rgba(245,237,223,.55);
+    --laton:#C9A96A;
+    --laton-suave:rgba(201,169,106,.35);
+    --laton-tenue:rgba(201,169,106,.16);
+    --linea:rgba(245,237,223,.12);
+    --panel:#131009;
+    --serif:"Fraunces", Georgia, "Times New Roman", serif;
+    --sans:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body { height:100%; overflow:hidden; }
   body {
     display:flex; align-items:center; justify-content:center;
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family:var(--sans);
     touch-action:manipulation; user-select:none; -webkit-user-select:none;
-    color:#fff; background:#000; transition: background .4s ease;
+    color:var(--marfil); background:var(--tinta); transition: background .4s ease;
     cursor:pointer;
   }
-  body[data-fondo="azul"] { background:#020a18; }
-  body[data-fondo="morado"] { background:#12081f; }
-  body[data-fondo="verde"] { background:#02120c; }
-  body[data-fondo="negro"] { background:#000; }
+  body[data-fondo="azul"] { background:#0A1119; }
+  body[data-fondo="morado"] { background:#14101C; }
+  body[data-fondo="verde"] { background:#0A130E; }
+  body[data-fondo="negro"] { background:#0E0C0A; }
   .ojos { display:flex; gap:8vw; align-items:center; transition: opacity .5s ease, transform .3s ease; }
   .ojo {
     width:32vw; height:32vw; max-width:340px; max-height:340px; min-width:130px; min-height:130px;
@@ -67,20 +90,23 @@
   #orbita { display:none; position:fixed; inset:0; width:100vw; height:100vh; }
   body[data-cara="orbita"] #orbita { display:block; }
   body[data-cara="orbita"] .ojos { display:none; }
-  body[data-cara="orbita"] #despertar { color:rgba(255,246,232,.6); }
-  /* Pulido 2.6b: con Órbita, la frase de abajo también es monoespaciada
-     y con tracking, como las letras del canvas. */
-  body[data-cara="orbita"] #frase { font-family:system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing:.06em; }
+  body[data-cara="orbita"] #despertar { color:var(--marfil-tenue); }
+  /* Fase 2.16: con Órbita, la frase de abajo es la serif editorial,
+     como la voz de Chelsea en el panel. */
+  body[data-cara="orbita"] #frase { font-family:var(--serif); }
   #frase {
     position:fixed; left:0; right:0; bottom:9vh; text-align:center;
-    color:rgba(255,246,232,.78); font-size:16px; line-height:1.4; padding:0 20px;
+    font-family:var(--serif); font-weight:500;
+    color:rgba(245,237,223,.92); font-size:18px; line-height:1.65; padding:0 22px;
     opacity:0; transition:opacity .4s ease; pointer-events:none;
   }
   #frase.visible { opacity:1; }
-  #frase small { display:block; color:rgba(255,246,232,.5); font-size:13px; margin-top:4px; }
-  /* Fase 2.9 — La foto de Chelsea: marco circular suave con su nombre
-     debajo, en overlay del DOM (nítida, no en el canvas). Fundidos
-     lentos de ~1 s. Si falta el archivo, solo queda su nombre. */
+  #frase small { display:block; font-family:var(--sans); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--marfil-tenue); margin-top:6px; }
+  /* Fase 2.15 — El retrato de Chelsea: su ilustración de puntitos en
+     un marco rectangular suave con su nombre debajo, en overlay del DOM
+     (nítida, no en el canvas). Marco recto, no circular, para que los
+     anillos de puntos de la ilustración no se corten. Fundidos lentos
+     de ~1 s. Si falta el archivo, solo queda su nombre. */
   #fotoChelsea {
     position:fixed; left:50%; top:42%; transform:translate(-50%,-50%) scale(.96);
     opacity:0; transition:opacity 1s ease, transform 1s ease;
@@ -88,44 +114,59 @@
   }
   #fotoChelsea.visible { opacity:1; transform:translate(-50%,-50%) scale(1); }
   #fotoChelsea img {
-    width:min(56vw,300px); height:min(56vw,300px); object-fit:cover; border-radius:50%;
-    border:3px solid rgba(255,246,232,.55);
-    box-shadow:0 0 60px rgba(255,246,232,.35), 0 0 140px rgba(255,246,232,.12);
+    width:min(62vw,320px); height:auto; border-radius:18px; display:block;
+    /* Fase 2.16 — Marco fino de latón, no borde grueso claro. */
+    border:1px solid rgba(201,169,106,.7); background:#fff;
+    box-shadow:0 0 40px rgba(201,169,106,.16), 0 24px 60px rgba(0,0,0,.5);
   }
   #fotoChelsea .nombre {
-    font-family:"Snell Roundhand","Segoe Script","Brush Script MT","Lucida Handwriting",cursive;
-    font-size:34px; color:#FFF6E8; margin-top:12px;
-    text-shadow:0 0 18px rgba(255,246,232,.5);
+    /* Fase 2.16 — Su nombre en la serif editorial, versales con
+       tracking. Adiós a la cursiva de imitación manuscrita. */
+    font-family:var(--serif); font-weight:600;
+    font-size:30px; letter-spacing:.32em; text-indent:.32em; text-transform:uppercase;
+    color:var(--marfil); margin-top:14px;
+    text-shadow:0 1px 24px rgba(0,0,0,.6);
   }
   #fotoChelsea.sin-foto img { display:none; }
   #fotoChelsea.sin-foto .nombre { font-size:54px; margin-top:0; }
   #despertar {
     position:fixed; left:0; right:0; bottom:4vh; text-align:center;
-    color:rgba(255,255,255,.55); font-size:14px; pointer-events:none;
+    font-family:var(--sans); font-size:12px; letter-spacing:.14em; text-transform:uppercase; line-height:1.7;
+    color:var(--marfil-tenue); pointer-events:none;
   }
   #menuBtn {
     position:fixed; top:14px; right:16px; z-index:10;
-    background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.18);
+    font-family:var(--sans);
+    background:rgba(14,12,10,.65); color:var(--marfil); border:1px solid rgba(201,169,106,.45);
     width:44px; height:44px; border-radius:50%; font-size:22px; cursor:pointer;
+    transition:border-color .2s ease;
   }
+  #menuBtn:hover { border-color:var(--laton); }
   #panel {
     display:none; position:fixed; left:12px; right:12px; bottom:12px; top:16%;
-    background:#0b1524; border:1px solid rgba(120,200,255,.35); border-radius:14px;
-    padding:16px; overflow:auto; z-index:20; text-align:left; cursor:default;
+    background:var(--panel); border:1px solid var(--laton-suave); border-radius:16px;
+    padding:20px 20px 24px; overflow:auto; z-index:20; text-align:left; cursor:default;
   }
   #panel.abierto { display:block; }
-  #panel h2 { font-size:17px; margin-bottom:6px; }
-  #panel h3 { font-size:14px; margin:14px 0 6px; color:#9fd8ff; }
-  #panel p, #panel li { font-size:14px; line-height:1.5; color:#dbeafe; }
+  #panel h2 { font-family:var(--serif); font-weight:600; font-size:21px; letter-spacing:.01em; color:var(--marfil); margin-bottom:8px; }
+  /* Fase 2.16 — Etiquetas de sección en versales con tracking y filete,
+     sin emojis decorativos en los encabezados. */
+  #panel h3 { font-family:var(--sans); font-weight:600; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--laton); margin:22px 0 10px; padding-bottom:8px; border-bottom:1px solid var(--linea); }
+  #panel p, #panel li { font-family:var(--sans); font-size:14px; line-height:1.65; color:var(--marfil-suave); }
   #panel ul { padding-left:18px; }
   #panel button {
-    background:#12233a; color:#eaf6ff; border:1px solid rgba(120,200,255,.4);
-    border-radius:999px; padding:9px 13px; font-size:14px; cursor:pointer; margin:3px 4px 3px 0;
+    font-family:var(--sans); font-weight:500;
+    background:rgba(245,237,223,.04); color:var(--marfil); border:1px solid rgba(245,237,223,.22);
+    border-radius:999px; padding:9px 14px; font-size:14px; cursor:pointer; margin:3px 4px 3px 0;
+    transition:border-color .2s ease, background .2s ease;
   }
-  #panel button.activo { background:#1d5c38; border-color:#7be3a8; }
-  #panel button.peligro { background:transparent; border-color:rgba(255,120,120,.5); color:#ffb3b3; }
+  #panel button:hover { border-color:rgba(201,169,106,.6); }
+  #panel button.activo { background:var(--laton); border-color:var(--laton); color:#171208; font-weight:600; }
+  #panel button.peligro { background:transparent; border-color:rgba(205,130,110,.5); color:#D8A89B; }
   #panel .cerrar { float:right; }
-  #panel select, #panel input[type="range"], #panel input[type="text"], #panel input[type="url"] { width:100%; margin:6px 0; background:#12233a; color:#eaf6ff; border:1px solid rgba(120,200,255,.4); border-radius:8px; padding:9px; font-size:14px; }
+  #panel select, #panel input[type="range"], #panel input[type="text"], #panel input[type="url"] { width:100%; margin:6px 0; font-family:var(--sans); background:rgba(245,237,223,.05); color:var(--marfil); border:1px solid rgba(245,237,223,.22); border-radius:8px; padding:10px 12px; font-size:14px; }
+  #panel select:focus, #panel input[type="text"]:focus, #panel input[type="url"]:focus { outline:none; border-color:var(--laton); box-shadow:0 0 0 3px rgba(201,169,106,.15); }
+  #panel input[type="range"] { accent-color:var(--laton); }
 </style>
 </head>
 <body data-estado="dormido" data-cara="orbita" data-fondo="negro">
@@ -134,14 +175,14 @@
     <div class="ojo"><div class="pupila"></div></div>
   </div>
   <canvas id="orbita" aria-label="Órbita de letras de Chelsea"></canvas>
-  <div id="fotoChelsea" aria-label="Foto de Chelsea, la perrita"><img id="fotoChelseaImg" src="orb-chelsea.jpg" alt="Chelsea, la perrita" onerror="this.parentNode.classList.add('sin-foto')"><div class="nombre">Chelsea</div></div>
+  <div id="fotoChelsea" aria-label="Retrato de Chelsea, la perrita"><img id="fotoChelseaImg" src="orb-chelsea.jpg" alt="Retrato de Chelsea, la perrita" onerror="this.parentNode.classList.add('sin-foto')"><div class="nombre">Chelsea</div></div>
   <div id="frase"></div>
-  <div id="despertar">Toca la pantalla una vez para despertarme.<br>Después ya no tocas nada, solo háblame.</div>
+  <div id="despertar">Toca la pantalla una vez para despertarme.<br>Después ya no tocas nada: dime “Chelsea,…” y te escucho.</div>
   <button id="menuBtn" aria-label="Configuración">⋮</button>
   <div id="panel">
     <button class="cerrar" id="btnCerrar">Cerrar ✕</button>
     <h2>Configuración</h2>
-    <p>Solo Chelsea en pantalla. La escucha es continua con la app abierta. Sin botones para hablar.</p>
+    <p>Solo Chelsea en pantalla. La escucha es continua con la app abierta, pero solo te hace caso si empiezas con “Chelsea,…”. Sin botones para hablar.</p>
     <h3>Cara del Orb</h3>
     <div id="caras">
       <button data-cara="orbita" class="activo">🛰 Órbita</button>
@@ -151,9 +192,9 @@
       <button data-cara="espiral">🌀 Espiral</button>
       <button data-cara="robot">🤖 Robot</button>
     </div>
-    <h3>🐾 Chelsea</h3>
+    <h3>Chelsea</h3>
     <button id="btnVerChelsea">🐾 Ver a Chelsea</button>
-    <p style="color:rgba(255,255,255,.55);">Te muestra su foto de verdad, con su nombre, unos segundos. También aparece sola al abrir y cuando llevas un rato en reposo.</p>
+    <p style="color:rgba(245,237,223,.55);">Te muestra su retrato, con su nombre, unos segundos. También aparece solo al abrir y cuando llevas un rato en reposo.</p>
     <h3>Color de fondo</h3>
     <div id="fondos">
       <button data-fondo="negro" class="activo">Negro</button>
@@ -164,44 +205,55 @@
     <h3>Voz del Orb</h3>
     <p>Estas son las voces reales de este aparato. En tu Galaxy son las de Google, en PC son las de Windows / Chrome. Prueba y quédate con la que te guste.</p>
     <select id="vozSelect"><option>Cargando voces…</option></select>
-    <label style="font-size:13px; color:rgba(255,255,255,.65);">Velocidad: <span id="velValor">0.95</span></label>
+    <label style="font-size:13px; color:rgba(245,237,223,.65);">Velocidad: <span id="velValor">0.95</span></label>
     <input type="range" id="velRango" min="0.7" max="1.3" step="0.05" value="0.95">
     <button id="btnProbarVoz">🔊 Probar esta voz</button>
-    <p style="color:rgba(255,255,255,.55);">La voz natural tipo Gemini / Grok no vive en el HTML. Es una voz neuronal de nube y va en la Fase 2, con internet y costo por uso. Esta de aquí es gratis y funciona hoy.</p>
-    <h3>🧠 Cerebro (Fase 2)</h3>
+    <p style="color:rgba(245,237,223,.55);">La voz natural tipo Gemini / Grok no vive en el HTML. Es una voz neuronal de nube y va en la Fase 2, con internet y costo por uso. Esta de aquí es gratis y funciona hoy.</p>
+    <h3>Cerebro (Fase 2)</h3>
     <p>Sin cerebro, el Orb platica con respuestas locales y guarda tus comandos. Con cerebro conectado, lo que no sea un comando va al cerebro, que te conoce por tu registro. La clave de API <b>nunca</b> va aquí ni en GitHub: vive en tu servidor intermediario.</p>
     <input type="url" id="cerebroUrl" placeholder="https://tu-servidor/responder">
     <button id="btnProbarCerebro">🔌 Probar conexión</button>
-    <p id="estadoCerebro" style="color:rgba(255,255,255,.55);">Cerebro: no conectado. Sin él, platico con respuestas locales.</p>
-    <h3>📊 Mi Sheet (Google Sheets)</h3>
+    <p id="estadoCerebro" style="color:rgba(245,237,223,.55);">Cerebro: no conectado. Sin él, platico con respuestas locales.</p>
+    <h3>Mi Sheet (Google Sheets)</h3>
     <p>Pega aquí la URL de tu Apps Script que termina en <b>/exec</b>. Queda guardada solo en este aparato, nunca en el HTML ni en GitHub. Sin ella, todo queda solo en este aparato. Con ella, cada gasto, nota y recordatorio se copia a tu Sheet en segundo plano, sin esperar respuesta.</p>
     <input type="url" id="sheetsUrl" placeholder="https://script.google.com/macros/s/.../exec">
     <button id="btnProbarSheets">📊 Probar Sheets</button>
-    <p id="estadoSheets" style="color:rgba(255,255,255,.55);">Sheets: no conectado. Todo queda solo en este aparato.</p>
+    <p id="estadoSheets" style="color:rgba(245,237,223,.55);">Sheets: no conectado. Todo queda solo en este aparato.</p>
+    <button id="btnRestaurar">↩️ Restaurar desde Sheets</button>
+    <p id="estadoRestaurar" style="color:rgba(245,237,223,.55);">Si cambias de aparato, trae tu historial de Sheets a este aparato. Lo que ya tenías no se duplica.</p>
+    <h3>Restaurar desde Sheets (Fase 2.13)</h3>
+    <p>¿Cambiaste de teléfono o de computadora? Toca <b>↩️ Restaurar desde Sheets</b> o di <b>“Chelsea, restaura desde Sheets”</b> y traigo tu historial del Sheet a este aparato: gastos, ingresos, citas, tareas, ideas, proyectos, FODA y tus puntos guardados. Lo que ya tenías no se duplica: una segunda restauración no agrega nada. Las citas futuras vuelven con su alarma. Si tu Sheet está vacío, te lo digo tal cual. Funciona con la misma URL de Mi Sheet que ya tienes conectada; si en este aparato no la tienes, te lo digo y no hago nada.</p>
     <h3>Escucha</h3>
     <button id="btnPausa">⏸ Pausar escucha</button>
     <p id="estadoEscucha">Escucha: apagada hasta que toques los ojos.</p>
-    <h3>⏰ Recordatorios con hora (Fase 2.4)</h3>
-    <p>Dile: <b>“recuérdame en 5 minutos que…”</b>, <b>“recuérdame a las 3 de la tarde que…”</b>, <b>“recuérdame mañana a las 9 que…”</b> o <b>“recuérdame todos los días a las 9 que tomes agua”</b> (se repite solo cada día). También pregúntame <b>“¿cómo voy hoy?”</b> y te digo tus gastos, recordatorios y notas del día. El Orb te lo dice con voz cuando llega la hora y además te deja el aviso en las notificaciones del sistema, para que no se pierda si la pantalla se apaga o cambias de app un momento. <b>La voz sigue sonando solo con la app abierta</b>: con la app cerrada del todo, Android no deja que una página web hable sola. El recordatorio queda también en tu registro y en tu Sheet, como agenda.</p>
+    <h3>Recordatorios con hora (Fase 2.4)</h3>
+    <p>Dile: <b>“Chelsea, recuérdame en 5 minutos que…”</b>, <b>“Chelsea, recuérdame a las 3 de la tarde que…”</b>, <b>“Chelsea, recuérdame mañana a las 9 que…”</b> o <b>“Chelsea, recuérdame todos los días a las 9 que tomes agua”</b> (se repite solo cada día). También pregúntame <b>“Chelsea, ¿cómo voy hoy?”</b> y te digo tus gastos, recordatorios y notas del día. El Orb te lo dice con voz cuando llega la hora y además te deja el aviso en las notificaciones del sistema, para que no se pierda si la pantalla se apaga o cambias de app un momento. <b>La voz sigue sonando solo con la app abierta</b>: con la app cerrada del todo, Android no deja que una página web hable sola. El recordatorio queda también en tu registro y en tu Sheet, como agenda.</p>
     <button id="btnAvisos">🔔 Activar avisos del sistema</button>
-    <p id="estadoAvisos" style="color:rgba(255,255,255,.55);">Avisos del sistema: sin activar.</p>
+    <p id="estadoAvisos" style="color:rgba(245,237,223,.55);">Avisos del sistema: sin activar.</p>
     <button id="btnVerAlarmas">⏰ Ver recordatorios</button>
     <ul id="listaAlarmas"></ul>
-    <h3>💰 Ingresos y reportes (Fase 2.5)</h3>
-    <p>Dile: <b>“registra un ingreso de 5000 de sueldo”</b> o <b>“me pagaron 2000 de freelance”</b>. Y pide <b>“reporte de la semana”</b>, <b>“reporte del mes”</b> o <b>“reporte del año”</b>: te dice ingresos, gastos, balance y tu gasto más grande de ese periodo. Solo lee lo que registraste, no inventa nada. Todo va también a tu Sheet si la tienes conectada.</p>
-    <h3>📅 Citas y tareas (Fase 2.5)</h3>
-    <p>Dile: <b>“agenda una cita el viernes a las 10 con el doctor”</b> — queda con alarma y aviso como un recordatorio, y sale en ⏰ Ver recordatorios marcada como cita. <b>“anota la tarea llamar al banco”</b> (con hora también le pone alarma). Pregunta <b>“¿qué tareas tengo pendientes?”</b> y <b>“¿qué citas tengo hoy?”</b>, y di <b>“completa la tarea llamar al banco”</b>.</p>
-    <h3>💡 Ideas y proyectos (Fase 2.5)</h3>
-    <p>Dile: <b>“guarda la idea abrir una tienda en línea”</b>, <b>“crea el proyecto tienda en línea”</b>, <b>“avance del proyecto tienda en línea: ya tengo el logo”</b> y <b>“¿cómo va el proyecto tienda en línea?”</b>. Pregunta <b>“¿qué ideas tengo?”</b> y <b>“¿qué proyectos tengo?”</b>. También puedes pausar, terminar o reactivar un proyecto con voz.</p>
-    <h3>🧭 Mi FODA (Fase 2.5)</h3>
-    <p>Dile: <b>“empezar mi FODA”</b> y te hago dos preguntas cortas por cada parte — fortalezas, debilidades, oportunidades, amenazas — una a la vez, y guardo cada respuesta. <b>“dime mi FODA”</b> te lo lee. También: <b>“agrega a mi FODA una fortaleza: sé vender”</b>. Sin cerebro, esto es una entrevista guiada local, no un análisis automático de tu conversación.</p>
+    <h3>Ingresos y reportes (Fase 2.5, motivo en la 2.11)</h3>
+    <p>Dile: <b>“Chelsea, registra un ingreso de 5000 de sueldo”</b> o <b>“Chelsea, me pagaron 2000 de freelance”</b>. Y pide <b>“Chelsea, reporte de la semana”</b>, <b>“Chelsea, reporte del mes”</b> o <b>“Chelsea, reporte del año”</b>: te dice ingresos, gastos, balance y tu gasto más grande de ese periodo. Solo lee lo que registraste, no inventa nada. Todo va también a tu Sheet si la tienes conectada.</p>
+    <p><b>Motivo:</b> agrégale el porqué a un gasto o ingreso: <b>“Chelsea, anota un gasto de 200 de gasolina porque fui a Querétaro”</b> o <b>“Chelsea, registra un ingreso de 5000 de sueldo, motivo: aguinaldo”</b>. El motivo queda guardado con el registro y en tu Sheet (columna Nota). El reporte ahora te desglosa tus 3 conceptos más grandes y tus motivos más frecuentes, para que te analices. Y pregúntame: <b>“Chelsea, ¿en qué gasté más este mes?”</b> o <b>“Chelsea, ¿por qué gasté en gasolina este mes?”</b>.</p>
+    <h3>Lo que vas aprendiendo (Fase 2.11)</h3>
+    <p>Dile: <b>“Chelsea, guarda este punto: el café sube si el agua está a 92 grados”</b>, <b>“Chelsea, guarda esto que investigué: la fotosíntesis usa clorofila”</b> o <b>“Chelsea, guarda este aprendizaje: vender es escuchar primero”</b>. Después pregúntale <b>“Chelsea, ¿qué puntos guardé esta semana?”</b>, <b>“Chelsea, ¿qué aprendí hoy?”</b> o <b>“Chelsea, ¿qué aprendí esta semana?”</b> y te los lee. Si el cerebro está conectado, también le cuenta tus puntos guardados, para que platiquen de lo que vas aprendiendo.</p>
+    <h3>Alertas y recomendaciones (Fase 2.12)</h3>
+    <p>El reporte del mes ahora te compara con el mes pasado y te recomienda qué vigilar el próximo mes, todo con tus números reales, nada inventado. Al anotar un gasto te aviso si este mes ya rebasaste lo que gastaste el mes pasado, o si ese gasto está muy por arriba de tu promedio. Pregúntame: <b>“Chelsea, ¿cómo voy con mis gastos este mes?”</b> o <b>“Chelsea, dame recomendaciones para el próximo mes”</b>.</p>
+    <h3>Mejorar ideas con Gemini y Excel (Fase 2.14)</h3>
+    <p>Dile: <b>“Chelsea, mejora la idea abrir una tienda en línea”</b> o <b>“Chelsea, mejora el proyecto tienda en línea”</b>. Gemini te da 3 mejoras concretas y próximos pasos. Si te gusta, di <b>“Chelsea, guarda esa mejora”</b> y queda como avance (también en tu Sheet). Si no, <b>“Chelsea, descarta la mejora”</b>. Esto solo funciona con el cerebro conectado (⋮ → 🧠 Cerebro); sin él, te lo digo y no invento nada. Y para tus datos en Excel, di <b>“Chelsea, haz un Excel de mis ideas”</b>, <b>“…de mis proyectos”</b>, <b>“…de mis gastos”</b> o <b>“…de mi registro”</b>: descarga un archivo .xlsx de verdad. Si no tienes internet en ese momento, te dejo un CSV que Excel abre igual.</p>
+    <h3>Citas y tareas (Fase 2.5)</h3>
+    <p>Dile: <b>“Chelsea, agenda una cita el viernes a las 10 con el doctor”</b> — queda con alarma y aviso como un recordatorio, y sale en ⏰ Ver recordatorios marcada como cita. <b>“Chelsea, anota la tarea llamar al banco”</b> (con hora también le pone alarma). Pregunta <b>“Chelsea, ¿qué tareas tengo pendientes?”</b> y <b>“Chelsea, ¿qué citas tengo hoy?”</b>, y di <b>“Chelsea, completa la tarea llamar al banco”</b>.</p>
+    <h3>Ideas y proyectos (Fase 2.5)</h3>
+    <p>Dile: <b>“Chelsea, guarda la idea abrir una tienda en línea”</b>, <b>“Chelsea, crea el proyecto tienda en línea”</b>, <b>“Chelsea, avance del proyecto tienda en línea: ya tengo el logo”</b> y <b>“Chelsea, ¿cómo va el proyecto tienda en línea?”</b>. Pregunta <b>“Chelsea, ¿qué ideas tengo?”</b> y <b>“Chelsea, ¿qué proyectos tengo?”</b>. También puedes pausar, terminar o reactivar un proyecto con voz.</p>
+    <h3>Mi FODA (Fase 2.5)</h3>
+    <p>Dile: <b>“Chelsea, empezar mi FODA”</b> y te hago dos preguntas cortas por cada parte — fortalezas, debilidades, oportunidades, amenazas — una a la vez, y guardo cada respuesta. <b>“Chelsea, dime mi FODA”</b> te lo lee. También: <b>“Chelsea, agrega a mi FODA una fortaleza: sé vender”</b>. Sin cerebro, esto es una entrevista guiada local, no un análisis automático de tu conversación.</p>
     <h3>Mi registro y mi charla</h3>
     <button id="btnVer">📋 Ver registro</button>
     <button id="btnExportar">⬇ Exportar registro</button>
     <button id="btnExportarChat">💬 Exportar chat</button>
     <ul id="lista"></ul>
     <p style="margin-top:10px;"><button class="peligro" id="btnBorrar">Borrar todo</button></p>
-    <p style="margin-top:12px; color:rgba(255,255,255,.55);">La voz de Chrome necesita internet. La cara y el guardado local funcionan sin internet. Con cerebro conectado, la charla fluida también necesita internet. Los recordatorios con hora suenan con la app abierta y además dejan un aviso en tus notificaciones. Los diarios se repiten solos cada día a la misma hora, y se cancelan diciendo “cancela mis recordatorios diarios”.</p>
+    <p style="margin-top:12px; color:rgba(245,237,223,.55);">La voz de Chrome necesita internet. La cara y el guardado local funcionan sin internet. Con cerebro conectado, la charla fluida también necesita internet. Los recordatorios con hora suenan con la app abierta y además dejan un aviso en tus notificaciones. Los diarios se repiten solos cada día a la misma hora, y se cancelan diciendo “Chelsea, cancela mis recordatorios diarios”.</p>
   </div>
 
 <script>
@@ -234,6 +286,20 @@
   /* Fase 2.5 — claves NUEVAS (las viejas no se tocan, nada guardado se pierde):
      tareas, ideas+proyectos y FODA. Citas usan orb_alarmas_v1 con tipo "cita". */
   var CLAVE_TAREAS = "orb_tareas_v1", CLAVE_IDEAS = "orb_ideas_proyectos_v1", CLAVE_FODA = "orb_foda_v1";
+  /* Fase 2.11 — UNA sola clave nueva: el puente de aprendizaje. Los
+     puntos que Cesar guarda ("guarda este punto...") viven aquí; además
+     se copian al registro general como tipo "aprendizaje", así llegan a
+     Sheets (solo a Registro, no hay pestaña propia) y el cerebro los ve
+     entre los últimos registros que se le mandan. */
+  var CLAVE_APRENDIZAJE = "orb_aprendizaje_v1";
+  function cargarAprendizaje() { var a = cargar(CLAVE_APRENDIZAJE); return Array.isArray(a) ? a : []; }
+  function guardarPunto(texto) {
+    var a = cargarAprendizaje();
+    a.push({ texto: texto, fecha: hoyISO() });
+    guardar(CLAVE_APRENDIZAJE, a);
+    guardarEntrada("aprendizaje", texto, null, null);
+    return a.length;
+  }
   function cargarObj(c, def) { try { var v = JSON.parse(localStorage.getItem(c) || "null"); return (v && typeof v === "object") ? v : def; } catch (e) { return def; } }
   function guardarObj(c, v) { try { localStorage.setItem(c, JSON.stringify(v)); } catch (e) {} }
   function cargarTareas() { var t = cargar(CLAVE_TAREAS); return Array.isArray(t) ? t : []; }
@@ -253,7 +319,7 @@
   }
 
   /* Fase 2.6 — Cara "Órbita de letras" de Chelsea. Un anillo de glifos
-     (letras, dígitos y caracteres en español) orbita alrededor de un
+     (mayúsculas elegantes y algunos símbolos refinados) orbita alrededor de un
      núcleo con la C de Chelsea, que late como un corazón. Despacio y
      tenue en reposo; se enciende y gira más rápido mientras Cesar habla;
      cuando Chelsea responde, los glifos se alinean formando su frase,
@@ -267,7 +333,9 @@
      anillo y frase con fundido letra por letra. */
   var orbitaCanvas = document.getElementById("orbita");
   var orbitaCtx = orbitaCanvas ? orbitaCanvas.getContext("2d") : null;
-  var ORBITA_LETRAS = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ0123456789áéíóú¿¡§∞◊";
+  /* Fase 2.16 — Juego de glifos curado: solo mayúsculas elegantes y
+     unos pocos símbolos refinados. Sin dígitos ni minúsculas sueltas. */
+  var ORBITA_LETRAS = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ§∞·—";
   var orbitaGlyphs = [], orbitaAngulo = 0, orbitaVel = 0.05, orbitaVelObj = 0.05,
       orbitaBrillo = 0.3, orbitaBrilloObj = 0.3, orbitaAmbar = false,
       orbitaHablaTxt = "", orbitaHablaIni = 0, orbitaHablando = false,
@@ -278,25 +346,51 @@
          desde los bordes y se acomodan en el anillo en ~1.2 s. */
       orbitaPolvo = [], orbitaIntroIni = 0, orbitaIntroDur = 1200;
 
-  /* Fase 2.9 — Chelsea, la perrita, con su foto de verdad. La silueta
-     de letras de la 2.7/2.8 no se parecía nada a ella, así que se quitó
-     del todo: sin puntos, sin máscara, sin homenaje de letras. En su
-     lugar, su foto real (orb-chelsea.jpg, que se sube junto al HTML)
-     aparece en un marco circular suave con su nombre debajo, con
-     fundidos lentos. Elegante y sin exagerar.
-     La foto vive en un overlay del DOM (#fotoChelsea), no en el canvas:
-     así se ve nítida y no depende del dibujo de letras. Si el archivo
-     no está (por ejemplo, abrió solo el HTML), el onerror esconde la
-     imagen y queda solo su nombre en letra elegante, nunca un icono
-     de imagen rota.
-     Solo queda una huellita dibujada (la de siempre) como marca de
-     agua: una sola, diminuta, al 7%, a la deriva detrás del anillo. */
+  /* Fase 2.15 — Chelsea, la perrita, con su retrato de puntitos. La
+     foto literal de la 2.9 se cambió por la ilustración que hizo Cesar
+     (orb-chelsea.jpg, que se sube junto al HTML): Chelsea sentada con
+     sus anillos de puntos, en un marco rectangular suave con su nombre
+     debajo, para que los anillos no se corten (nada de círculo).
+     Fundidos lentos. Elegante y sin exagerar.
+     El retrato vive en un overlay del DOM (#fotoChelsea), no en el
+     canvas: así se ve nítido y no depende del dibujo de letras. Si el
+     archivo no está (por ejemplo, abrió solo el HTML), el onerror
+     esconde la imagen y queda solo su nombre en letra elegante, nunca
+     un icono de imagen rota.
+     La marca de agua ya no es la huellita dibujada: ahora es la misma
+     ilustración, tenue al 8%, centrada detrás del anillo, con las
+     esquinas difuminadas para que no se note el borde cuadrado. */
   var CHELSEA_CFG = { primeraMs: 30000, inactivoMs: 60000, autoMs: 5000, mostrarMs: 8000, esperaMs: 120000 };
   var chelseaCargaIni = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
   var chelseaUltimaActividad = chelseaCargaIni;
   var chelseaFotoFase = "oculta", chelseaFotoTimer = null,
-      chelseaProxima = 0, chelseaAutoHecha = false, chelseaForzada = false,
-      chelseaHuellaFase = 0;
+      chelseaProxima = 0, chelseaAutoHecha = false, chelseaForzada = false;
+  /* Fase 2.15 — Marca de agua: la misma ilustración, cargada una vez y
+     con las esquinas difuminadas en un canvas aparte, para dibujarla
+     tenue detrás del anillo sin que se note el borde cuadrado. */
+  var chelseaMarcaImg = null, chelseaMarcaLista = false;
+  (function chelseaMarcaCargar() {
+    try {
+      var im = new Image();
+      im.onload = function() {
+        try {
+          var S = 480, cv = document.createElement("canvas");
+          cv.width = S; cv.height = S;
+          var gc = cv.getContext("2d");
+          gc.drawImage(im, 0, 0, S, S);
+          gc.globalCompositeOperation = "destination-in";
+          var gr = gc.createRadialGradient(S/2, S/2, 0, S/2, S/2, S * 0.71);
+          gr.addColorStop(0, "rgba(0,0,0,1)");
+          gr.addColorStop(0.72, "rgba(0,0,0,1)");
+          gr.addColorStop(1, "rgba(0,0,0,0)");
+          gc.fillStyle = gr; gc.fillRect(0, 0, S, S);
+          chelseaMarcaImg = cv; chelseaMarcaLista = true;
+        } catch (e) { chelseaMarcaLista = false; }
+      };
+      im.onerror = function() { chelseaMarcaLista = false; };
+      im.src = "orb-chelsea.jpg";
+    } catch (e) { chelseaMarcaLista = false; }
+  })();
   var fotoChelseaEl = document.getElementById("fotoChelsea");
   function chelseaAhora() { return (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now(); }
   function chelseaInactiva() {
@@ -322,7 +416,7 @@
     }, ms);
   }
   /* Fase 2.8: motivo "habla" = la cancelación viene de que Chelsea está
-     hablando. Una foto pedida a propósito (botón o voz) sobrevive a su
+     hablando. Un retrato pedido a propósito (botón o voz) sobrevive a su
      propio saludo; un toque, el panel o empezar a escuchar sí la
      cancelan siempre. */
   function chelseaCancelar(motivo) {
@@ -338,7 +432,7 @@
     }
     if (chelseaFotoFase !== "oculta") return;
     if (!orbitaEsCara() || !chelseaInactiva()) return;
-    /* Una sola vez por carga, justo tras la entrada: su foto aparece
+    /* Una sola vez por carga, justo tras la entrada: su retrato aparece
        para que Cesar la vea sin tener que esperar en silencio. */
     if (!chelseaAutoHecha) {
       if (t >= orbitaIntroIni + orbitaIntroDur + 600) {
@@ -355,7 +449,7 @@
     chelseaFotoMostrar(CHELSEA_CFG.mostrarMs, false);
   }
   /* Mostrar a Chelsea a pedido: botón ⋮ o voz. Cambia a la cara Órbita
-     si hace falta, cierra el panel y muestra su foto ahora mismo. La
+     si hace falta, cierra el panel y muestra su retrato ahora mismo. La
      marca "forzada" hace que sobreviva a su propio saludo hablado; un
      toque o abrir el panel la cancelan igual. */
   function chelseaMostrarAhora() {
@@ -372,15 +466,6 @@
     chelseaProxima = 0;
     chelseaFotoMostrar(CHELSEA_CFG.mostrarMs, true);
   }
-  function chelseaDibujarHuella(ctx, cx, cy, r, color) {
-    /* Huellita dibujada (no emoji): almohadilla + cuatro deditos. */
-    ctx.fillStyle = color || "#241a10";
-    ctx.beginPath(); ctx.ellipse(cx, cy + r * 0.28, r * 0.42, r * 0.34, 0, 0, Math.PI * 2); ctx.fill();
-    var dx = [-0.48, -0.17, 0.17, 0.48], dy = [-0.28, -0.42, -0.42, -0.28];
-    for (var k = 0; k < 4; k++) {
-      ctx.beginPath(); ctx.arc(cx + dx[k] * r, cy + dy[k] * r, r * 0.16, 0, Math.PI * 2); ctx.fill();
-    }
-  }
   function orbitaEsCara() { return document.body.getAttribute("data-cara") === "orbita"; }
   function orbitaCrearGlyphs() {
     orbitaGlyphs = [];
@@ -390,6 +475,9 @@
         rf: 0.9 + Math.random() * 0.2,
         c: ORBITA_LETRAS[Math.floor(Math.random() * ORBITA_LETRAS.length)],
         s: 13 + Math.random() * 7,
+        /* Fase 2.16 — Peso variado con mesura: ~3 de cada 10 glifos
+           en seminegrita, el resto en regular. */
+        w: Math.random() < 0.3 ? 600 : 400,
         fase: Math.random() * Math.PI * 2,
         px: undefined, py: undefined, sx: 0, sy: 0
       });
@@ -430,7 +518,7 @@
     orbitaCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   function orbitaEstado(n) {
-    /* Fase 2.9: cualquier cosa que no sea reposo cancela la foto de Chelsea. */
+    /* Fase 2.15: cualquier cosa que no sea reposo cancela el retrato de Chelsea. */
     if (n !== "dormido" && n !== "atento" && n !== "reposo") chelseaCancelar(n === "hablando" ? "habla" : undefined);
     if (n === "escuchando") { orbitaVelObj = 0.55; orbitaBrilloObj = 1; orbitaAmbar = false; }
     else if (n === "aviso") { orbitaVelObj = 0.3; orbitaBrilloObj = 0.95; orbitaAmbar = true; }
@@ -491,22 +579,31 @@
       ctx.fillStyle = "rgba(245,237,224," + (d.a * (0.6 + 0.4 * Math.sin(t / 800 + d.fase))).toFixed(3) + ")";
       ctx.beginPath(); ctx.arc(d.x * orbitaAncho, d.y * orbitaAlto, d.r, 0, Math.PI * 2); ctx.fill();
     }
-    /* Fase 2.9 — Marca de agua: una sola huellita dibujada, diminuta,
-       al 7%, a la deriva despacio detrás del anillo, solo con la cara
-       Órbita. Apenas un susurro. */
-    chelseaHuellaFase += dt * 0.12;
-    var hx = (0.5 + 0.34 * Math.sin(chelseaHuellaFase)) * orbitaAncho;
-    var hy = (0.36 + 0.2 * Math.sin(chelseaHuellaFase * 0.7 + 1.3)) * orbitaAlto;
+    /* Fase 2.15 — Marca de agua: la ilustración de Chelsea, tenue al
+       8%, centrada detrás del anillo, del tamaño del anillo. Solo con
+       la cara Órbita (este dibujo solo corre ahí). Apenas un susurro. */
+    if (chelseaMarcaLista && chelseaMarcaImg) {
+      var ladoMarca = Math.min(orbitaAncho, orbitaAlto) * 0.60;
+      ctx.save();
+      ctx.globalAlpha = 0.08;
+      ctx.drawImage(chelseaMarcaImg, cx - ladoMarca / 2, cy - ladoMarca / 2, ladoMarca, ladoMarca);
+      ctx.restore();
+    }
+    /* Fase 2.16 — Círculo fino de latón marcando la órbita, y uno
+       exterior aún más tenue: la geometría se lee sin gritar. */
     ctx.save();
-    ctx.globalAlpha = 0.07;
-    chelseaDibujarHuella(ctx, hx, hy, Math.max(10, Math.min(orbitaAncho, orbitaAlto) * 0.02), "rgb(255,246,232)");
+    ctx.strokeStyle = "rgba(201,169,106,0.32)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, radio, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = "rgba(245,237,223,0.07)";
+    ctx.beginPath(); ctx.arc(cx, cy, radio * 1.16, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
     /* Texto hablado: posiciones de cada letra revelada, para que los
        glifos se alineen formando la frase. Máximo 3 líneas: si la
        respuesta es larga, las primeras se van desplazando. Cada letra
        nace con un fundido (al) y las líneas viejas se atenúan. */
-    /* Fase 2.9: mientras su foto se muestra, la línea de texto de la
-       respuesta en el anillo se pausa (no se solapa con la foto). */
+    /* Fase 2.15: mientras su retrato se muestra, la línea de texto de la
+       respuesta en el anillo se pausa (no se solapa con el retrato). */
     var hablando = (orbitaHablando || orbitaDesvan > 0) && !chelseaFotoVisible();
     var tamLetra = Math.max(16, Math.min(24, orbitaAncho * 0.045));
     var anchoChar = tamLetra * 0.62;
@@ -551,9 +648,15 @@
     ctx.shadowBlur = 0;
     ctx.globalAlpha = 0.9 * alfaNucleo;
     ctx.beginPath(); ctx.arc(cx, cy, rNucleo, 0, Math.PI * 2); ctx.fill();
+    /* Fase 2.16 — Anillo fino de latón alrededor del núcleo, y la C
+       en la serif editorial. */
+    ctx.globalAlpha = 0.85 * alfaNucleo;
+    ctx.strokeStyle = "rgba(201,169,106,0.9)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, rNucleo + 6, 0, Math.PI * 2); ctx.stroke();
     ctx.globalAlpha = alfaNucleo;
-    ctx.fillStyle = "#241a10";
-    ctx.font = "bold " + Math.round(rNucleo * 1.1) + "px system-ui, sans-serif";
+    ctx.fillStyle = "#171208";
+    ctx.font = "600 " + Math.round(rNucleo * 1.05) + "px Fraunces, Georgia, 'Times New Roman', serif";
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("C", cx, cy + 1);
     ctx.restore();
@@ -568,6 +671,9 @@
       var ox = cx + Math.cos(ang) * rr, oy = cy + Math.sin(ang) * rr;
       var tx = ox, ty = oy, tc = g.c;
       var ta = orbitaBrillo * (0.5 + 0.5 * Math.sin(t / 700 + g.fase));
+      /* Fase 2.16 — Profundidad: los glifos del borde exterior (rf
+         alto) quedan un poco más tenues que los del interior. */
+      ta *= 1.18 - g.rf * 0.18;
       if (introT < 1) {
         tx = g.sx + (ox - g.sx) * introE;
         ty = g.sy + (oy - g.sy) * introE;
@@ -584,7 +690,7 @@
       if (g.px === undefined) { g.px = tx; g.py = ty; }
       var lerpF = 0.12;
       g.px += (tx - g.px) * lerpF; g.py += (ty - g.py) * lerpF;
-      ctx.font = g.s + "px system-ui, -apple-system, 'Segoe UI', sans-serif";
+      ctx.font = g.w + " " + g.s + "px Fraunces, Georgia, 'Times New Roman', serif";
       ctx.fillStyle = orbitaAmbar ? "rgba(255,205,110," + ta.toFixed(3) + ")" : "rgba(255,246,232," + ta.toFixed(3) + ")";
       /* Solo los glifos más brillantes llevan glow: barato y se nota. */
       if (ta > 0.8) { ctx.shadowColor = orbitaAmbar ? "rgba(255,205,110,0.9)" : "rgba(255,246,232,0.9)"; ctx.shadowBlur = 14; }
@@ -631,7 +737,7 @@
   orbitaRedimensionar();
   actualizarCaraOrbita();
   /* Gancho de prueba (no cambia nada en uso normal): deja ver y forzar
-     la foto de Chelsea desde fuera, para verificarlo sin esperar. */
+     el retrato de Chelsea desde fuera, para verificarlo sin esperar. */
   try { window.__orbitaChelsea = { cfg: CHELSEA_CFG, fase: function(){ return chelseaFotoFase; }, visible: chelseaFotoVisible, cancelar: chelseaCancelar, mostrar: chelseaMostrarAhora, auto: function(){ return chelseaAutoHecha; }, estado: function(n){ mostrarEstado(n); }, forzar: function(){ chelseaUltimaActividad = chelseaAhora() - CHELSEA_CFG.inactivoMs - 1; chelseaProxima = 0; } }; } catch (e) {}
 
   var vozElegida = null, velocidad = 0.95;
@@ -691,9 +797,341 @@
     p.forEach(function(e){ enviarASheets(e); });
     return p.length;
   }
-  function guardarEntrada(tipo, contenido, monto, detalle) {
+  /* Fase 2.13 — Restaurar desde Sheets: trae el respaldo del Sheet
+     (?accion=respaldo) a este aparato. Sirve sobre todo al cambiar de
+     aparato: el registro de este teléfono/computadora empieza vacío y
+     el Sheet guarda la copia. La fusión es conservadora: lo que ya
+     tenías no se duplica y lo que solo existe aquí no se borra.
+     - El registro local no tiene ID (las filas del Sheet sí: UUID del
+       servidor). Al restaurar, cada registro nuevo guarda su ID del
+       Sheet; los viejos sin ID se enlazan por firma (fecha+tipo+texto
+       +monto+detalle). Por eso una segunda restauración agrega 0.
+     - Motivo: el Registro no lo trae; se saca de la pestaña
+       Gastos/Ingresos por ID (columna Motivo de la v5).
+     - Citas: el Sheet no guarda la hora en columna propia; viene en
+       el texto como "(⏰ vie 27 nov 10:00)". Solo se rearma la alarma
+       si la hora es futura y la cita sigue pendiente en el Sheet.
+     - Nunca se reenvía nada al Sheet: la fusión escribe directo en
+       localStorage, no pasa por guardarEntrada. */
+  var MESES_CORTO = { ene: 0, feb: 1, mar: 2, abr: 3, may: 4, jun: 5, jul: 6, ago: 7, sep: 8, sept: 8, oct: 9, nov: 10, dic: 11 };
+  var restaurandoSheets = false;
+  /* Fecha del respaldo a ISO: acepta ISO, dd/mm/aaaa y Date. */
+  function parsearFechaRespaldo(v) {
+    if (v === undefined || v === null || v === "") return null;
+    if (v instanceof Date) return isNaN(v.getTime()) ? null : v.toISOString();
+    var s = String(v).trim();
+    if (!s) return null;
+    var d = new Date(s);
+    if (!isNaN(d.getTime())) return d.toISOString();
+    var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    if (m) {
+      var f = new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+      return isNaN(f.getTime()) ? null : f.toISOString();
+    }
+    return null;
+  }
+  function diaDeISO(iso) {
+    var d = new Date(iso || "");
+    return isNaN(d.getTime()) ? String(iso || "") : d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+  }
+  /* Firma de un registro local sin ID, para enlazarlo con su fila del
+     Sheet. Minuto exacto (no milisegundos): el Sheet guarda la fecha
+     con la misma precisión, pero así aguantan los textos viejos. */
+  function firmaRegistroLocal(e) {
+    var d = new Date(e.fecha || "");
+    var cuando = isNaN(d.getTime()) ? String(e.fecha || "") : d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate() + " " + d.getHours() + ":" + d.getMinutes();
+    return [cuando, String(e.tipo || "").toLowerCase(), String(e.texto || "").trim().toLowerCase(), (e.monto === null || e.monto === undefined || e.monto === "" ? "" : Number(e.monto)), String(e.detalle || "").trim().toLowerCase()].join("|");
+  }
+  function filasTabRespaldo(respaldo, tab) {
+    var t = respaldo && respaldo[tab];
+    return (t && Array.isArray(t.filas)) ? t.filas : [];
+  }
+  /* Una fila del Registro del respaldo → registro local. null si es
+     una fila vacía (sin tipo ni texto): se cuenta como saltada. */
+  function filaRegistroDesdeRespaldo(fila, motivoPorId) {
+    var tipo = String(fila["Tipo"] || "").toLowerCase().trim();
+    var texto = String(fila["Texto"] || "").trim();
+    if (!tipo && !texto) return null;
+    var monto = fila["Monto"];
+    var m = (monto === "" || monto === null || monto === undefined) ? null : Number(monto);
+    if (m !== null && isNaN(m)) m = null;
+    var e = { id: String(fila["ID"] || "").trim() || null, fecha: parsearFechaRespaldo(fila["Fecha"]) || hoyISO(), tipo: tipo || "nota", texto: texto, monto: m, detalle: String(fila["Detalle"] || "").trim() || null };
+    if (e.id && motivoPorId && motivoPorId[e.id]) e.motivo = motivoPorId[e.id];
+    return e;
+  }
+  /* "(⏰ vie 27 nov 10:00)" o "(⏰ vie 27 nov 10:00, todos los días)"
+     → { cuando: Date, diario: bool } o null si no trae hora. El año
+     es el actual: si ya pasó y es diario, avanza día a día hasta el
+     futuro (igual que las alarmas diarias de siempre). */
+  function parsearCuandoCita(texto) {
+    var m = String(texto || "").match(/\(⏰[^)]*?(\d{1,2})\s+([a-záéíóú]+)\s+(\d{1,2}):(\d{2})/i);
+    if (!m) return null;
+    var mes = MESES_CORTO[m[2].toLowerCase()];
+    if (mes === undefined) return null;
+    var ahora = new Date();
+    var cuando = new Date(ahora.getFullYear(), mes, parseInt(m[1], 10), parseInt(m[3], 10), parseInt(m[4], 10), 0, 0);
+    if (isNaN(cuando.getTime())) return null;
+    var diario = /todos los d[ií]as/i.test(texto);
+    if (diario) { while (cuando.getTime() <= Date.now()) cuando.setDate(cuando.getDate() + 1); }
+    return { cuando: cuando, diario: diario };
+  }
+  function tituloSinHora(texto) {
+    return String(texto || "").replace(/\s*\(⏰[^)]*\)\s*$/, "").trim();
+  }
+  function mismaAlarma(a, b) {
+    if (!a || !b) return false;
+    if (String(a.texto || "").trim().toLowerCase() !== String(b.texto || "").trim().toLowerCase()) return false;
+    if (a.cuando === b.cuando) return true;
+    if (a.diario && b.diario) {
+      var da = new Date(a.cuando), db = new Date(b.cuando);
+      return !isNaN(da.getTime()) && !isNaN(db.getTime()) && da.getHours() === db.getHours() && da.getMinutes() === db.getMinutes();
+    }
+    return false;
+  }
+  /* Reconstruye las tiendas por tipo desde el registro ya fusionado
+     (y las pestañas del respaldo para estados). Lo local que no está
+     en el respaldo se conserva tal cual. */
+  function reconstruirDesdeRegistro(reg, respaldo) {
+    var sumados = { tareas: 0, ideas: 0, proyectos: 0, foda: 0, aprendizaje: 0, alarmas: 0 };
+    /* --- Aprendizaje: unión por texto+día. --- */
+    var ap = cargarAprendizaje();
+    var apVistos = {};
+    ap.forEach(function(p){ apVistos[String(p.texto || "").trim().toLowerCase() + "|" + diaDeISO(p.fecha)] = true; });
+    reg.forEach(function(e){
+      if (e.tipo !== "aprendizaje" || !e.texto) return;
+      var k = String(e.texto).trim().toLowerCase() + "|" + diaDeISO(e.fecha);
+      if (!apVistos[k]) { apVistos[k] = true; ap.push({ texto: e.texto, fecha: e.fecha }); sumados.aprendizaje++; }
+    });
+    guardar(CLAVE_APRENDIZAJE, ap);
+    /* --- FODA: unión por cuadrante+texto. --- */
+    var foda = cargarFoda();
+    var fodaVistos = {};
+    FODA_CUADRANTES.forEach(function(c){ (foda[c] || []).forEach(function(x){ fodaVistos[c + "|" + String(x.texto || "").trim().toLowerCase()] = true; }); });
+    reg.forEach(function(e){
+      if (e.tipo !== "foda" || !e.texto) return;
+      var c = String(e.detalle || "").toLowerCase().trim();
+      if (FODA_CUADRANTES.indexOf(c) === -1) return;
+      var k2 = c + "|" + String(e.texto).trim().toLowerCase();
+      if (!fodaVistos[k2]) { fodaVistos[k2] = true; foda[c].push({ texto: e.texto, fecha: e.fecha }); sumados.foda++; }
+    });
+    guardarObj(CLAVE_FODA, foda);
+    /* --- Ideas y proyectos: unión por nombre/texto. Estado del
+       proyecto: manda la pestaña Proyectos del respaldo; si no está,
+       el último registro de ese proyecto (detalle "creado"→activo). --- */
+    var estadoProyTab = {};
+    filasTabRespaldo(respaldo, "Proyectos").forEach(function(fila){
+      var id = String(fila["ID"] || "").trim();
+      if (id) estadoProyTab[id] = String(fila["Estado"] || "").toLowerCase().trim();
+    });
+    var ideas = cargarIdeas();
+    var ideasVistas = {};
+    ideas.ideas.forEach(function(i){ ideasVistas[String(i.texto || "").trim().toLowerCase() + "|" + diaDeISO(i.fecha)] = true; });
+    var proyPorNombre = {};
+    ideas.proyectos.forEach(function(p){ proyPorNombre[String(p.nombre || "").toLowerCase()] = p; });
+    var ultimoEstadoReg = {};
+    reg.forEach(function(e){
+      if (e.tipo !== "proyecto" || !e.texto) return;
+      var det = String(e.detalle || "").toLowerCase().trim();
+      ultimoEstadoReg[String(e.texto).trim().toLowerCase()] = det === "creado" ? "activo" : det;
+    });
+    reg.forEach(function(e){
+      if (e.tipo === "idea" && e.texto) {
+        var ki = String(e.texto).trim().toLowerCase() + "|" + diaDeISO(e.fecha);
+        if (!ideasVistas[ki]) { ideasVistas[ki] = true; ideas.ideas.push({ texto: e.texto, fecha: e.fecha }); sumados.ideas++; }
+      } else if (e.tipo === "proyecto" && e.texto) {
+        var kn = String(e.texto).trim().toLowerCase();
+        var estado = (e.id && estadoProyTab[e.id]) || ultimoEstadoReg[kn] || "activo";
+        if (["activo", "pausado", "terminado"].indexOf(estado) === -1) estado = "activo";
+        if (!proyPorNombre[kn]) {
+          var p = { nombre: e.texto, estado: estado, creado: e.fecha, avances: [] };
+          ideas.proyectos.push(p); proyPorNombre[kn] = p; sumados.proyectos++;
+        } else {
+          proyPorNombre[kn].estado = estado;
+        }
+      }
+    });
+    reg.forEach(function(e){
+      if (e.tipo !== "avance" || !e.texto) return;
+      var kp = String(e.detalle || "").trim().toLowerCase();
+      var pv = proyPorNombre[kp];
+      if (pv) {
+        var ya = pv.avances.some(function(a){ return String(a.texto || "").trim().toLowerCase() === String(e.texto).trim().toLowerCase() && diaDeISO(a.fecha) === diaDeISO(e.fecha); });
+        if (!ya) pv.avances.push({ fecha: e.fecha, texto: e.texto });
+      } else {
+        /* Fase 2.14 — Un avance cuyo detalle es el texto de una IDEA
+           (una mejora guardada en la idea) se cuelga de esa idea como
+           mejora, para que no se pierda al restaurar en otro aparato. */
+        ideas.ideas.forEach(function(it){
+          if (String(it.texto || "").trim().toLowerCase() === kp) {
+            it.mejoras = it.mejoras || [];
+            var yaM = it.mejoras.some(function(m2){ return String(m2.texto || "").trim().toLowerCase() === String(e.texto).trim().toLowerCase() && diaDeISO(m2.fecha) === diaDeISO(e.fecha); });
+            if (!yaM) it.mejoras.push({ fecha: e.fecha, texto: e.texto });
+          }
+        });
+      }
+    });
+    guardarObj(CLAVE_IDEAS, ideas);
+    /* --- Tareas: la pestaña Tareas del respaldo manda (ID, Título,
+       Estado, Creada); el registro aporta las que no tienen pestaña y
+       las marcas "Completada: ...". Lo local sin coincidencia queda. --- */
+    var tareas = cargarTareas();
+    var tareasPorId = {}, tareasPorFirma = {};
+    tareas.forEach(function(t){
+      if (t.id) tareasPorId[String(t.id)] = t;
+      tareasPorFirma[String(t.texto || "").trim().toLowerCase() + "|" + diaDeISO(t.fecha)] = t;
+    });
+    function ponerTarea(id, texto, estado, fecha, cuando) {
+      var t = (id && tareasPorId[id]) || tareasPorFirma[String(texto || "").trim().toLowerCase() + "|" + diaDeISO(fecha)];
+      if (t) {
+        /* La fila de creación del registro dice "pendiente" (el estado
+           al crearla), no el actual: nunca baja una tarea hecha a
+           pendiente. La marca "Completada:" sí la sube a hecha. */
+        if (!(t.estado === "hecha" && estado === "pendiente")) t.estado = estado;
+        if (cuando && !t.cuando) t.cuando = cuando;
+        return false;
+      }
+      var nt = { id: id || ("r" + Date.now() + "" + Math.floor(Math.random() * 1000)), texto: texto, estado: estado, fecha: fecha, cuando: cuando || null };
+      tareas.push(nt);
+      if (id) tareasPorId[id] = nt;
+      tareasPorFirma[String(texto).trim().toLowerCase() + "|" + diaDeISO(fecha)] = nt;
+      sumados.tareas++;
+      return true;
+    }
+    filasTabRespaldo(respaldo, "Tareas").forEach(function(fila){
+      var titulo = String(fila["Título"] || "").trim();
+      if (!titulo) return;
+      var est = String(fila["Estado"] || "").toLowerCase().trim();
+      ponerTarea(String(fila["ID"] || "").trim() || null, titulo, (est === "completada" || est === "hecha") ? "hecha" : "pendiente", parsearFechaRespaldo(fila["Creada"]) || hoyISO(), parsearFechaRespaldo(fila["Fecha límite"]));
+    });
+    reg.forEach(function(e){
+      if (e.tipo !== "tarea" || !e.texto) return;
+      var comp = String(e.texto).match(/^completada:\s*(.+)$/i);
+      if (comp) {
+        var objetivo = String(comp[1]).trim().toLowerCase();
+        tareas.forEach(function(t){ if (String(t.texto || "").trim().toLowerCase() === objetivo) t.estado = "hecha"; });
+        return;
+      }
+      if (String(e.detalle || "").toLowerCase().trim() === "completada") return;
+      ponerTarea(e.id, e.texto, "pendiente", e.fecha, null);
+    });
+    guardar(CLAVE_TAREAS, tareas);
+    /* --- Citas y recordatorios con hora: solo se rearma la alarma si
+       la hora es futura. La pestaña Citas manda el Estado: una cita
+       completada o cancelada no vuelve a sonar. La hora sale del
+       sufijo "(⏰ ...)" del texto, porque el Sheet no la guarda en
+       columna propia (su FechaHora es la de creación). --- */
+    var estadoCitaTab = {};
+    filasTabRespaldo(respaldo, "Citas").forEach(function(fila){
+      var id = String(fila["ID"] || "").trim();
+      if (id) estadoCitaTab[id] = String(fila["Estado"] || "").toLowerCase().trim();
+    });
+    var alarmas = cargar(CLAVE_ALARMAS);
+    reg.forEach(function(e){
+      if ((e.tipo !== "cita" && e.tipo !== "agenda") || !e.texto) return;
+      if (e.id && estadoCitaTab[e.id] && (estadoCitaTab[e.id] === "completada" || estadoCitaTab[e.id] === "cancelada")) return;
+      var pc = parsearCuandoCita(e.texto);
+      if (!pc) return;
+      if (!pc.diario && pc.cuando.getTime() <= Date.now()) return;
+      var titulo = tituloSinHora(e.texto);
+      var nueva = { id: e.id || ("r" + Date.now() + "" + Math.floor(Math.random() * 1000)), cuando: pc.cuando.toISOString(), texto: titulo, creado: e.fecha, hecho: false, diario: pc.diario, tipo: e.tipo === "cita" ? "cita" : "recordatorio" };
+      var duplicada = alarmas.some(function(a){ return mismaAlarma(a, nueva); });
+      if (!duplicada) { alarmas.push(nueva); sumados.alarmas++; }
+    });
+    guardar(CLAVE_ALARMAS, alarmas);
+    return sumados;
+  }
+  /* Fusiona el respaldo en el registro local. Devuelve los conteos
+     reales: restaurados (nuevos), yaExistian y saltados (filas vacías
+     que no se pudieron leer). */
+  function fusionarRespaldo(respaldo) {
+    var reg = cargar(CLAVE);
+    var idsLocales = {}, firmasLocales = {};
+    reg.forEach(function(e){
+      if (e.id) idsLocales[String(e.id)] = e;
+      else firmasLocales[firmaRegistroLocal(e)] = e;
+    });
+    var motivoPorId = {};
+    ["Gastos", "Ingresos"].forEach(function(tab){
+      filasTabRespaldo(respaldo, tab).forEach(function(fila){
+        var id = String(fila["ID"] || "").trim();
+        var mo = String(fila["Motivo"] || "").trim();
+        if (id && mo) motivoPorId[id] = mo;
+      });
+    });
+    var filasReg = filasTabRespaldo(respaldo, "Registro");
+    var restaurados = 0, yaExistian = 0, saltados = 0, vistos = {};
+    filasReg.forEach(function(fila){
+      var e = filaRegistroDesdeRespaldo(fila, motivoPorId);
+      if (!e) { saltados++; return; }
+      if (e.id) {
+        if (vistos[e.id]) { yaExistian++; return; }
+        vistos[e.id] = true;
+        if (idsLocales[e.id]) { yaExistian++; return; }
+        var firma = firmaRegistroLocal(e);
+        if (firmasLocales[firma]) { firmasLocales[firma].id = e.id; yaExistian++; return; }
+        reg.push(e); idsLocales[e.id] = e; restaurados++;
+      } else {
+        var firma2 = firmaRegistroLocal(e);
+        if (firmasLocales[firma2]) { yaExistian++; return; }
+        reg.push(e); firmasLocales[firma2] = e; restaurados++;
+      }
+    });
+    guardar(CLAVE, reg);
+    var recon = reconstruirDesdeRegistro(reg, respaldo);
+    return { restaurados: restaurados, yaExistian: yaExistian, saltados: saltados, totalRespaldo: filasReg.length, recon: recon };
+  }
+  /* Trae el respaldo de Sheets y lo fusiona. Habla el resultado con
+     números reales; si algo falla, lo dice tal cual, sin inventar. */
+  function restaurarDesdeSheets() {
+    if (restaurandoSheets) return Promise.resolve(null);
+    var url = (APPS_SCRIPT_URL || "").trim();
+    if (!url) {
+      var msgSin = "No tienes conectado Mi Sheet en este aparato. Conéctalo en ⋮ → Mi Sheet primero.";
+      mostrarFrase(msgSin);
+      decir(msgSin);
+      return Promise.resolve({ ok: false, error: "sin url" });
+    }
+    restaurandoSheets = true;
+    mostrarFrase("Trayendo tu respaldo de Sheets…", "Un momento.");
+    var sep = url.indexOf("?") === -1 ? "?" : "&";
+    var ctrl = null;
+    try { ctrl = new AbortController(); setTimeout(function(){ try { ctrl.abort(); } catch (e2) {} }, 20000); } catch (e) {}
+    var promesa = fetch(url + sep + "accion=respaldo", ctrl ? { signal: ctrl.signal } : {})
+      .then(function(res){
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function(d){
+        if (!d || d.ok === false) throw new Error((d && d.error) ? d.error : "sin respaldo");
+        if (!d.respaldo || typeof d.respaldo !== "object") throw new Error("sin respaldo");
+        var r = fusionarRespaldo(d.respaldo);
+        var msg;
+        if (r.restaurados === 0 && r.yaExistian === 0) {
+          msg = "Tu Sheet no tiene registros todavía, así que no había nada que restaurar, Cesar.";
+        } else {
+          msg = "Listo, Cesar. Restauré " + r.restaurados + " registro(s) de Sheets; " + r.yaExistian + " ya los tenías" + (r.saltados ? " y " + r.saltados + " se saltaron" : "") + ".";
+        }
+        mostrarFrase(msg);
+        decir(msg);
+        actualizarBloqueoPantalla();
+        return { ok: true, restaurados: r.restaurados, yaExistian: r.yaExistian, saltados: r.saltados };
+      })
+      .catch(function(err){
+        var msgFallo = "No pude traer tu respaldo de Sheets, Cesar. Revisa tu internet y que Mi Sheet esté conectado.";
+        mostrarFrase(msgFallo);
+        decir(msgFallo);
+        return { ok: false, error: String((err && err.message) || err) };
+      });
+    promesa.then(function(){ restaurandoSheets = false; }, function(){ restaurandoSheets = false; });
+    return promesa;
+  }
+  /* Fase 2.11 — motivo opcional: si viene, queda también como campo
+     propio (e.motivo) para los reportes, además de en "detalle" (así
+     llega a Sheets: Registro/Detalle y Gastos/Ingresos/Nota). */
+  function guardarEntrada(tipo, contenido, monto, detalle, motivo) {
     var r = cargar(CLAVE);
     var e = { fecha: hoyISO(), tipo: tipo, texto: contenido, monto: monto || null, detalle: detalle || null };
+    if (motivo) e.motivo = motivo;
     r.push(e); guardar(CLAVE, r);
     enviarASheets(e);
     reenviarPendientes();
@@ -773,6 +1211,45 @@
     else { inicio = new Date(ahora.getFullYear(), 0, 1); }
     return { inicio: inicio, fin: fin };
   }
+  /* Fase 2.11 — MOTIVO de un gasto o ingreso. Se saca del final del
+     concepto: "...porque fui a Querétaro" o "...motivo: aguinaldo"
+     (también "motivo aguinaldo", sin dos puntos). Devuelve el concepto
+     limpio, el motivo y con qué forma venía, para hablarlo natural
+     ("porque..." o "motivo: ..."). Si el motivo viene vacío o solo
+     queda la palabra "motivo"/"porque" colgada, se quita y no hay
+     motivo. Sin motivo, todo funciona exactamente como antes. */
+  function extraerMotivo(txt) {
+    var t = String(txt || "").trim();
+    var m = t.match(/\bmotivo\s*:?\s*(.+)$/);
+    if (m && m[1].trim()) return { texto: t.slice(0, m.index).trim(), motivo: m[1].trim(), forma: "motivo" };
+    var p = t.match(/\bporque\s+(.+)$/);
+    if (p && p[1].trim()) return { texto: t.slice(0, p.index).trim(), motivo: p[1].trim(), forma: "porque" };
+    var solo = t.match(/\bmotivo\s*:?\s*$/) || t.match(/\bporque\s*$/);
+    if (solo) return { texto: t.slice(0, solo.index).trim(), motivo: "", forma: "" };
+    return { texto: t, motivo: "", forma: "" };
+  }
+  /* El motivo de un registro: campo propio (2.11) o, si es viejo, el
+     detalle — que en gastos/ingresos ya era el motivo desde la 2.11. */
+  function motivoDe(e) { return String((e && (e.motivo || e.detalle)) || "").trim(); }
+  /* Top N claves de un mapa {clave: número}, ordenadas de mayor a menor. */
+  function topN(obj, n) {
+    return Object.keys(obj).sort(function(a, b){ return obj[b] - obj[a]; }).slice(0, n);
+  }
+  /* ["a","b","c"] → "a, b y c" (para hablarlo en voz alta). */
+  function formatearLista(arr) {
+    if (!arr.length) return "";
+    if (arr.length === 1) return arr[0];
+    return arr.slice(0, -1).join(", ") + " y " + arr[arr.length - 1];
+  }
+  /* "este mes" / "esta semana" / "este año" en la frase; si no dice
+     periodo, se asume el mes (es lo que más pregunta Cesar). */
+  function periodoDeFrase(f) {
+    if (/esta semana|la semana|\bsemana\b/.test(f)) return "semana";
+    if (/este a[ñn]o|el a[ñn]o|\ba[ñn]o\b|anual/.test(f)) return "año";
+    return "mes";
+  }
+  function nombrePeriodo(p) { return p === "semana" ? "esta semana" : p === "año" ? "este año" : "este mes"; }
+
   function reportePeriodo(periodo) {
     var rango = rangoPeriodo(periodo);
     var nombre = periodo === "semana" ? "la semana" : periodo === "mes" ? "el mes" : "el año";
@@ -787,9 +1264,182 @@
     gastos.forEach(function(e){ var c = (e.texto || "sin concepto"); porConcepto[c] = (porConcepto[c] || 0) + (e.monto || 0); });
     var mayor = null, mayorMonto = 0;
     Object.keys(porConcepto).forEach(function(c){ if (porConcepto[c] > mayorMonto) { mayorMonto = porConcepto[c]; mayor = c; } });
-    var txt = "Reporte de " + nombre + ", Cesar. Ingresos: " + ingresos + " pesos. Gastos: " + totalG + " pesos. Balance: " + balance + " pesos.";
+    /* Fase 2.11 — Desglose para analizarte: tus 3 conceptos de gasto
+       más grandes, tus 3 conceptos de ingreso más grandes y tus motivos
+       más frecuentes del periodo. Corto, para hablarlo en voz alta. */
+    var porConceptoI = {};
+    r.filter(function(e){ return e.tipo === "ingreso"; }).forEach(function(e){ var c = (e.texto || "sin concepto"); porConceptoI[c] = (porConceptoI[c] || 0) + (e.monto || 0); });
+    var topG = topN(porConcepto, 3);
+    var topI = topN(porConceptoI, 3);
+    var motivosCount = {};
+    gastos.forEach(function(e){
+      var mo = motivoDe(e);
+      if (mo) { var k = mo.toLowerCase(); if (!motivosCount[k]) motivosCount[k] = { texto: mo, n: 0 }; motivosCount[k].n++; }
+    });
+    var topMotivos = topN(motivosCount, 2).map(function(k){ return motivosCount[k].texto; });
+    var txt = "Reporte de " + nombre + ", Cesar. Ingresos: " + ingresos + " pesos" + (topI.length >= 2 ? ": " + formatearLista(topI.map(function(c){ return porConceptoI[c] + " de " + c; })) : "") + ". Gastos: " + totalG + " pesos" + (topG.length >= 2 ? ": " + formatearLista(topG.map(function(c){ return porConcepto[c] + " en " + c; })) : "") + ". Balance: " + balance + " pesos.";
     if (mayor) txt += " Tu gasto más grande fue " + mayor + ", con " + mayorMonto + " pesos.";
+    if (topMotivos.length) txt += " Tus motivos más frecuentes: " + formatearLista(topMotivos) + ".";
+    /* Fase 2.12 — Alertas del mes: comparación con el mes pasado y una
+       recomendación para el próximo mes. Solo con tus números reales;
+       si este mes no hay gastos, no hay bloque de alerta. */
+    if (periodo === "mes" && totalG > 0) { var bloqueM = bloqueAlertaMes(); if (bloqueM) txt += " " + bloqueM; }
     return txt;
+  }
+
+  /* Fase 2.12 — Alertas de gasto y recomendaciones para el próximo mes.
+     Todo se calcula solo con tu registro real: nada inventado, nada de
+     presupuestos ni metas. Los meses son calendario (enero, febrero...).
+     Si el mes pasado no tiene gastos, no hay comparación posible y se
+     dice en claro; si este mes no hay gastos, no hay alerta. */
+  var MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  function nombreMes(m) { return MESES_ES[m] || ""; }
+  function mesAnterior(y, m) { return m === 0 ? { y: y - 1, m: 11 } : { y: y, m: m - 1 }; }
+  /* Gastos de un mes calendario concreto. */
+  function gastosDelMes(y, m) {
+    return cargar(CLAVE).filter(function(e){
+      if (e.tipo !== "gasto") return false;
+      var d = new Date(e.fecha);
+      return d.getFullYear() === y && d.getMonth() === m;
+    });
+  }
+  /* Todos los gastos anotados alguna vez (para el promedio). */
+  function todosLosGastos() {
+    return cargar(CLAVE).filter(function(e){ return e.tipo === "gasto"; });
+  }
+  /* Motivo más frecuente de un concepto dentro de una lista de gastos.
+     Se ordena por conteo de verdad (el topN genérico no sirve aquí:
+     sus valores son objetos, no números). */
+  function topMotivoDe(lista, concepto) {
+    var cnt = {};
+    lista.forEach(function(e){
+      if ((e.texto || "") !== concepto) return;
+      var mo = motivoDe(e);
+      if (mo) { var k = mo.toLowerCase(); if (!cnt[k]) cnt[k] = { texto: mo, n: 0 }; cnt[k].n++; }
+    });
+    var claves = Object.keys(cnt).sort(function(a, b){ return cnt[b].n - cnt[a].n; });
+    return claves.length ? cnt[claves[0]].texto : "";
+  }
+  /* Resumen de gastos de un mes: total, cuántos, conceptos con totales,
+     el concepto mayor y su motivo más frecuente. */
+  function resumenMesGastos(y, m) {
+    var gs = gastosDelMes(y, m);
+    var total = gs.reduce(function(a, e){ return a + (e.monto || 0); }, 0);
+    var porConcepto = {};
+    gs.forEach(function(e){ var c = e.texto || "sin concepto"; porConcepto[c] = (porConcepto[c] || 0) + (e.monto || 0); });
+    var topC = topN(porConcepto, 1)[0] || null;
+    return { total: total, n: gs.length, porConcepto: porConcepto,
+      topConcepto: topC, topMonto: topC ? porConcepto[topC] : 0,
+      topMotivo: topC ? topMotivoDe(gs, topC) : "" };
+  }
+  /* "Gastaste X pesos más/menos que el mes pasado, un Y por ciento
+     más/menos." Si el mes pasado no tiene gastos, devuelve null: quien
+     llama lo dice en claro. */
+  function textoComparacionMes(totalActual, totalAnterior) {
+    if (!(totalAnterior > 0)) return null;
+    var dif = totalActual - totalAnterior;
+    var pct = Math.round(Math.abs(dif) / totalAnterior * 100);
+    if (dif > 0) return "Gastaste " + dif + " pesos más que el mes pasado, un " + pct + " por ciento más.";
+    if (dif < 0) return "Gastaste " + (-dif) + " pesos menos que el mes pasado, un " + pct + " por ciento menos.";
+    return "Gastaste lo mismo que el mes pasado: " + totalActual + " pesos.";
+  }
+  /* Una recomendación concreta para el próximo mes, desde tu concepto
+     mayor: "Para el próximo mes, vigila gasolina: fue tu mayor gasto
+     con 3,000 pesos, y tu motivo más frecuente fue ir a Querétaro." */
+  function recomendacionConcepto(concepto, monto, motivo) {
+    return "Para el próximo mes, vigila " + concepto + ": fue tu mayor gasto con " + monto + " pesos" + (motivo ? ", y tu motivo más frecuente fue " + motivo : "") + ".";
+  }
+  /* Bloque de alerta del mes en curso: comparación con el mes pasado
+     (+ "Ojo" si ya lo rebasaste) y una recomendación. Sin gastos este
+     mes, devuelve "" y no se dice nada. */
+  function bloqueAlertaMes() {
+    var ahora = new Date();
+    var act = resumenMesGastos(ahora.getFullYear(), ahora.getMonth());
+    if (act.total <= 0) return "";
+    var ant = mesAnterior(ahora.getFullYear(), ahora.getMonth());
+    var prev = resumenMesGastos(ant.y, ant.m);
+    var partes = [];
+    var comp = textoComparacionMes(act.total, prev.total);
+    if (comp) {
+      partes.push(comp);
+      if (act.total > prev.total) partes.push("Ojo: este mes ya rebasaste lo que gastaste el mes pasado.");
+    } else {
+      partes.push("El mes pasado no anotaste gastos, así que no hay con qué comparar este mes.");
+    }
+    if (act.topConcepto) partes.push(recomendacionConcepto(act.topConcepto, act.topMonto, act.topMotivo));
+    return partes.join(" ");
+  }
+  /* Alertas al anotar un gasto: (a) si este mes ya rebasaste el total
+     del mes pasado (solo si el mes pasado tiene gastos, si no la
+     comparación no dice nada); (b) si este gasto es más del doble de tu
+     promedio de todos tus gastos (solo con 5 o más gastos anotados;
+     el promedio se calcula exacto y se habla redondeado). Se llama
+     DESPUÉS de guardar, así el total y el promedio ya lo incluyen.
+     Devuelve "" si no aplica nada. */
+  function alertasAlGuardarGasto(monto) {
+    var ahora = new Date();
+    var act = resumenMesGastos(ahora.getFullYear(), ahora.getMonth());
+    var ant = mesAnterior(ahora.getFullYear(), ahora.getMonth());
+    var prev = resumenMesGastos(ant.y, ant.m);
+    var alertas = [];
+    if (prev.total > 0 && act.total > prev.total) alertas.push("Ojo: este mes ya rebasaste lo que gastaste el mes pasado.");
+    var todos = todosLosGastos();
+    if (todos.length >= 5) {
+      var suma = todos.reduce(function(a, e){ return a + (e.monto || 0); }, 0);
+      var prom = suma / todos.length;
+      if (monto > 2 * prom) alertas.push("Ese gasto está por arriba de tu promedio de " + Math.round(prom) + " pesos.");
+    }
+    return alertas.length ? " " + alertas.join(" ") : "";
+  }
+  /* "¿Cómo voy con mis gastos este mes?": total, mayor gasto,
+     comparación con el mes pasado y alerta si ya lo rebasaste. */
+  function resumenGastosMes() {
+    var ahora = new Date();
+    var act = resumenMesGastos(ahora.getFullYear(), ahora.getMonth());
+    if (act.total <= 0) return "Este mes no has anotado gastos todavía, Cesar.";
+    var ant = mesAnterior(ahora.getFullYear(), ahora.getMonth());
+    var prev = resumenMesGastos(ant.y, ant.m);
+    var t = "Este mes llevas " + act.total + " pesos en " + act.n + (act.n === 1 ? " gasto" : " gastos") + ".";
+    if (act.topConcepto) t += " Tu mayor gasto es " + act.topConcepto + ", con " + act.topMonto + " pesos.";
+    var comp = textoComparacionMes(act.total, prev.total);
+    if (comp) {
+      t += " " + comp;
+      if (act.total > prev.total) t += " Ojo: este mes ya rebasaste lo que gastaste el mes pasado.";
+    } else {
+      t += " El mes pasado no anotaste gastos, así que no hay con qué comparar este mes.";
+    }
+    return t;
+  }
+  /* Último mes con gastos, buscando hacia atrás desde el mes pasado
+     (hasta 12 meses). Si ningún mes pasado tiene gastos pero el mes en
+     curso sí, se usa el mes en curso. Sin gastos en ningún lado: null. */
+  function ultimoMesConGastos() {
+    var ahora = new Date();
+    var y = ahora.getFullYear(), m = ahora.getMonth();
+    for (var i = 0; i < 12; i++) {
+      var a = mesAnterior(y, m);
+      y = a.y; m = a.m;
+      var r = resumenMesGastos(y, m);
+      if (r.total > 0) return { y: y, m: m, resumen: r };
+    }
+    var act = resumenMesGastos(ahora.getFullYear(), ahora.getMonth());
+    if (act.total > 0) return { y: ahora.getFullYear(), m: ahora.getMonth(), resumen: act };
+    return null;
+  }
+  /* Recomendaciones para el próximo mes, desde el último mes con datos:
+     los 2 conceptos más grandes, cada uno en una línea concreta con su
+     total y su motivo más frecuente. */
+  function recomendacionesProximoMes() {
+    var u = ultimoMesConGastos();
+    if (!u) return "Todavía no tienes gastos anotados, Cesar, así que no tengo de dónde sacarte recomendaciones. Anota un gasto y en el próximo mes te digo en qué vigilar.";
+    var gs = gastosDelMes(u.y, u.m);
+    var top2 = topN(u.resumen.porConcepto, 2);
+    var mesNombre = nombreMes(u.m) + (u.y !== new Date().getFullYear() ? " de " + u.y : "");
+    var lineas = top2.map(function(c){
+      var mo = topMotivoDe(gs, c);
+      return "Vigila " + c + ": en " + mesNombre + " gastaste " + u.resumen.porConcepto[c] + " pesos" + (mo ? ", y tu motivo más frecuente fue " + mo : "") + ".";
+    });
+    return "Para el próximo mes, con lo que gastaste en " + mesNombre + ": " + lineas.join(" ");
   }
 
   /* Fase 2.2 — Recordatorios con hora que sí suenan (con la app abierta).
@@ -1073,16 +1723,73 @@
     return "Tu FODA, Cesar. " + partes.join(". ") + ".";
   }
 
+  /* Fase 2.10 — Palabra de activación: la escucha es continua con la
+     app abierta, pero solo se procesa lo que empieza por "Chelsea".
+     Todo lo demás se ignora en silencio: no se registra nada, no hay
+     respuesta hablada ni en pantalla, y la escucha sigue. El menú ⋮
+     sigue funcionando sin palabra de activación. Devuelve el texto sin
+     el prefijo (y sin la coma, dos puntos o punto que lo siga), o null
+     si no empieza por Chelsea o si no queda nada después del nombre. */
+  function extraerOrdenChelsea(texto) {
+    var m = String(texto || "").match(/^[\s¡¿]*chelsea\b\s*[,:\.]?\s*/i);
+    if (!m) return null;
+    var resto = String(texto || "").slice(m[0].length);
+    if (!resto.trim()) return null;
+    return resto;
+  }
+
   /* Comandos detectados en la misma conversación, sin botón */
   function procesar(fraseOriginal) {
-    var f = (" " + fraseOriginal.toLowerCase() + " ").replace(/[.,;!?¿¡]/g, " ");
+    var orden = extraerOrdenChelsea(fraseOriginal);
+    if (orden === null) return null;
+    var f = (" " + orden.toLowerCase() + " ").replace(/[.,;!?¿¡]/g, " ");
     var m;
     if (/c[oó]mo voy hoy|c[oó]mo va mi d[ií]a|resumen del d[ií]a|resumen de hoy|qu[eé] hice hoy|qu[eé] llevo hoy/.test(f)) return resumenDia();
     if (/c[oó]mo voy (?:esta )?semana|resumen de la semana|gastos de la semana|qu[eé] gast[eé] esta semana/.test(f)) return resumenSemana();
-    /* Fase 2.9 — Ver a Chelsea: muestra su foto de verdad y saluda. */
+    /* Fase 2.15 — Ver a Chelsea: muestra su retrato y saluda. */
     if (/mu[eé]strame a chelsea|ens[eé][ñn]ame a chelsea|d[oó]nde est[aá] chelsea|ver a chelsea/.test(f)) {
       chelseaMostrarAhora();
       return "Aquí estoy, Cesar. Siempre contigo.";
+    }
+    /* Fase 2.13 — Restaurar desde Sheets: trae el respaldo a este
+       aparato. Es asíncrono (hay que leer el Sheet), así que arranca
+       ahora y el resumen real se habla cuando termina. */
+    if (/restaura(?:r)? (?:desde |de )?sheets?|restaura(?:r)? mi registro|restaura(?:r)? el registro/.test(f)) {
+      restaurarDesdeSheets();
+      return "Voy a traer tu respaldo de Sheets, Cesar. Dame un momento.";
+    }
+    /* Fase 2.14 — Mejorar una idea o proyecto con Gemini. Es asíncrono:
+       se verifica en claro que la idea exista y que el cerebro esté
+       conectado; si no, se dice tal cual y no se inventa nada. La
+       respuesta de Gemini se habla cuando llega y queda pendiente para
+       guardarla como avance. */
+    m = f.match(/(?:ay[uú]dame a )?mejorar?\b (?:la |el |mi )?(idea|proyecto)\s+(.+)/);
+    if (m) {
+      var tipoM = m[1], nombreM = m[2].trim();
+      var halladoM = buscarIdeaProyecto(tipoM, nombreM);
+      if (!halladoM) return tipoM === "proyecto" ? "No encontré ningún proyecto llamado " + nombreM + ", Cesar. Dime: ¿qué proyectos tengo? y te los leo." : "No encontré ninguna idea llamada " + nombreM + ", Cesar. Dime: ¿qué ideas tengo? y te las leo.";
+      if (!cerebroURL) return "Para mejorar ideas con Gemini necesito el cerebro conectado. Conéctalo en ⋮ → Cerebro.";
+      var nombreRealM = tipoM === "proyecto" ? halladoM.ref.nombre : halladoM.ref.texto;
+      mejorarIdea(halladoM);
+      return "Voy a pedirle a Gemini que mejore " + nombreRealM + ", Cesar. Dame un momento.";
+    }
+    /* Fase 2.14 — Guardar o descartar la mejora pendiente. */
+    if (/guarda (?:esa )?mejora|guarda la mejora en (?:la idea|el proyecto)|s[ií]\s+gu[aá]rdala|\bgu[aá]rdala\b/.test(f)) {
+      var resMejora = guardarMejoraPendiente();
+      mostrarEstado("aviso");
+      return resMejora.mensaje;
+    }
+    if (/descarta (?:la )?mejora|olvida (?:la )?mejora/.test(f)) return descartarMejora();
+    /* Fase 2.14 — Excel por voz. Si no hay datos del tema, se dice en
+       claro y no se descarga nada; si los hay, se arranca la descarga
+       y el resumen real se habla cuando termina. */
+    m = f.match(/(?:hazme|haz|crea) (?:un )?excel(?: de)?\s*(mis ideas|mis proyectos|mis gastos|mi registro|de mis ideas|de mis proyectos|de mis gastos|de mi registro)?/);
+    if (m) {
+      var topicoRaw = (m[1] || "").replace(/^de\s+/, "").trim();
+      var temaX = topicoRaw === "mis ideas" ? "ideas" : topicoRaw === "mis proyectos" ? "proyectos" : topicoRaw === "mis gastos" ? "gastos" : "registro";
+      if (contarDatosExcel(datosExcel(temaX)) <= 0) return mensajeExcelVacio(temaX);
+      generarExcel(temaX);
+      return "Voy a armar tu Excel " + etiquetaExcel(temaX) + ", Cesar. Dame un momento.";
     }
     /* Fase 2.5 — FODA: cancelar, contestar en sesión, empezar, agregar, leer. */
     if (/cancela mi foda|termina el foda|salir del foda|sal del foda/.test(f)) {
@@ -1099,7 +1806,7 @@
         return "Guardando... listo, Cesar. Agregué esa " + madd[1] + " a tu FODA. Seguimos: " + preguntaFoda();
       }
       var cuad = FODA_CUADRANTES[fodaSesion.cuadrante];
-      guardarFoda(cuad, fraseOriginal.trim());
+      guardarFoda(cuad, orden.trim());
       mostrarEstado("aviso");
       var sig = avanzarFoda();
       if (!sig) return "Guardando... listo, Cesar. Terminamos tu FODA. " + leerFoda();
@@ -1121,18 +1828,20 @@
     m = f.match(/(?:registra (?:un )?ingreso|ingreso)(?: de)?\s+(\d+(?:[.,]\d+)?)(?:\s*(?:pesos|mxn))?(?:\s*(?:de|en)\s*(.+))?/);
     if (m) {
       var montoI = parseFloat(m[1].replace(",", "."));
-      var conceptoI = (m[2] || "sin concepto").trim();
-      guardarEntrada("ingreso", conceptoI, montoI);
+      var resI = extraerMotivo((m[2] || "sin concepto").trim());
+      var conceptoI = resI.texto || "sin concepto";
+      guardarEntrada("ingreso", conceptoI, montoI, resI.motivo || null, resI.motivo || null);
       mostrarEstado("aviso");
-      return "Guardando... listo, Cesar. Anoté un ingreso de " + montoI + " pesos de " + conceptoI + ". Llevas " + totalIngresos() + " pesos de ingresos anotados.";
+      return "Guardando... listo, Cesar. Anoté un ingreso de " + montoI + " pesos de " + conceptoI + (resI.motivo ? (resI.forma === "porque" ? ", porque " + resI.motivo : ", motivo: " + resI.motivo) : "") + ". Llevas " + totalIngresos() + " pesos de ingresos anotados.";
     }
     m = f.match(/me pagaron\s+(\d+(?:[.,]\d+)?)(?:\s*(?:pesos|mxn))?(?:\s*(?:de|en)\s*(.+))?/);
     if (m) {
       var montoP = parseFloat(m[1].replace(",", "."));
-      var conceptoP = (m[2] || "sin concepto").trim();
-      guardarEntrada("ingreso", conceptoP, montoP);
+      var resP = extraerMotivo((m[2] || "sin concepto").trim());
+      var conceptoP = resP.texto || "sin concepto";
+      guardarEntrada("ingreso", conceptoP, montoP, resP.motivo || null, resP.motivo || null);
       mostrarEstado("aviso");
-      return "Guardando... listo, Cesar. Anoté un ingreso de " + montoP + " pesos de " + conceptoP + ". Llevas " + totalIngresos() + " pesos de ingresos anotados.";
+      return "Guardando... listo, Cesar. Anoté un ingreso de " + montoP + " pesos de " + conceptoP + (resP.motivo ? (resP.forma === "porque" ? ", porque " + resP.motivo : ", motivo: " + resP.motivo) : "") + ". Llevas " + totalIngresos() + " pesos de ingresos anotados.";
     }
     /* Fase 2.5 — Reportes semanales, mensuales y anuales. */
     m = f.match(/reporte (?:de la |del )?(semana|mes|a[ñn]o)|reporte (semanal|mensual|anual)/);
@@ -1141,16 +1850,57 @@
       var periodo = /semanal|semana/.test(per) ? "semana" : /mensual|mes/.test(per) ? "mes" : "año";
       return reportePeriodo(periodo);
     }
+    /* Fase 2.11 — Análisis de ti mismo: ¿en qué gasté más? y
+       ¿por qué gasté en X? Solo lee tu registro, no inventa nada. */
+    if (/en qu[eé] gast[eé] m[aá]s/.test(f)) {
+      var perTop = periodoDeFrase(f);
+      var rgTop = rangoPeriodo(perTop);
+      var gsTop = cargar(CLAVE).filter(function(e){ var t = new Date(e.fecha).getTime(); return e.tipo === "gasto" && t >= rgTop.inicio.getTime() && t <= rgTop.fin.getTime(); });
+      if (!gsTop.length) return "No tienes gastos anotados " + nombrePeriodo(perTop) + ", Cesar.";
+      var pcTop = {};
+      gsTop.forEach(function(e){ var c = e.texto || "sin concepto"; pcTop[c] = (pcTop[c] || 0) + (e.monto || 0); });
+      var topC = null, topMonto = 0;
+      Object.keys(pcTop).forEach(function(c){ if (pcTop[c] > topMonto) { topMonto = pcTop[c]; topC = c; } });
+      var mTop = {};
+      gsTop.filter(function(e){ return (e.texto || "") === topC; }).forEach(function(e){
+        var mo = motivoDe(e);
+        if (mo) { var k = mo.toLowerCase(); if (!mTop[k]) mTop[k] = { texto: mo, n: 0 }; mTop[k].n++; }
+      });
+      var topMoK = topN(mTop, 1)[0];
+      return "Gastaste más en " + topC + " " + nombrePeriodo(perTop) + ": " + topMonto + " pesos." + (topMoK ? " El motivo más frecuente fue: " + mTop[topMoK].texto + "." : " No anotaste el motivo en esos gastos.");
+    }
+    m = f.match(/por qu[eé] gast[eé] en (.+?)(?: este mes| esta semana| este a[ñn]o)?\s*$/);
+    if (m) {
+      var perQ = periodoDeFrase(f);
+      var rgQ = rangoPeriodo(perQ);
+      var buscQ = m[1].trim();
+      var gsQ = cargar(CLAVE).filter(function(e){ var t = new Date(e.fecha).getTime(); return e.tipo === "gasto" && t >= rgQ.inicio.getTime() && t <= rgQ.fin.getTime() && (e.texto || "").toLowerCase().indexOf(buscQ) !== -1; });
+      if (!gsQ.length) return "No tienes gastos de " + buscQ + " anotados " + nombrePeriodo(perQ) + ", Cesar.";
+      var motsQ = {};
+      gsQ.forEach(function(e){
+        var mo = motivoDe(e);
+        if (mo) { var k = mo.toLowerCase(); if (!motsQ[k]) motsQ[k] = { texto: mo, n: 0 }; motsQ[k].n++; }
+      });
+      var listaMQ = topN(motsQ, 3).map(function(k){ return motsQ[k].texto + (motsQ[k].n > 1 ? " (" + motsQ[k].n + " veces)" : ""); });
+      if (!listaMQ.length) return "Tienes gastos de " + buscQ + " " + nombrePeriodo(perQ) + ", Cesar, pero no anotaste el motivo en ninguno.";
+      return "En " + buscQ + " " + nombrePeriodo(perQ) + ", tus motivos fueron: " + formatearLista(listaMQ) + ".";
+    }
+    /* Fase 2.12 — Alertas y recomendaciones: ¿cómo voy con mis gastos
+       este mes? y recomendaciones para el próximo mes. Todo con tus
+       números reales, nada inventado. */
+    if (/c[oó]mo (?:voy|van) (?:con|de) mis gastos/.test(f)) return resumenGastosMes();
+    if (/recomendaciones para (?:el )?pr[oó]ximo mes|qu[eé] me recomiendas para (?:el )?pr[oó]ximo mes|dame recomendaciones|recomi[eé]ndame/.test(f)) return recomendacionesProximoMes();
     if (/mis ingresos|cu[aá]nto (?:llevo|he ganado|gan[eé])|total de ingresos/.test(f)) {
       return "Llevas " + totalIngresos() + " pesos en ingresos anotados.";
     }
     m = f.match(/gasto(?: de)?\s+(\d+(?:[.,]\d+)?)(?:\s*(?:pesos|mxn))?(?:\s*(?:de|en)\s*(.+))?/);
     if (m) {
       var monto = parseFloat(m[1].replace(",", "."));
-      var concepto = (m[2] || "sin concepto").trim();
-      guardarEntrada("gasto", concepto, monto);
+      var resG = extraerMotivo((m[2] || "sin concepto").trim());
+      var concepto = resG.texto || "sin concepto";
+      guardarEntrada("gasto", concepto, monto, resG.motivo || null, resG.motivo || null);
       mostrarEstado("aviso");
-      return "Guardando... listo, Cesar. Anoté un gasto de " + monto + " pesos de " + concepto + ". Llevas " + totalGastos() + " pesos anotados.";
+      return "Guardando... listo, Cesar. Anoté un gasto de " + monto + " pesos de " + concepto + (resG.motivo ? (resG.forma === "porque" ? ", porque " + resG.motivo : ", motivo: " + resG.motivo) : "") + ". Llevas " + totalGastos() + " pesos anotados." + alertasAlGuardarGasto(monto);
     }
     /* Fase 2.5 — Citas con alarma y aviso, como un recordatorio. */
     m = f.match(/(?:agenda|programa|pon)\s+(?:una\s+)?cita\s+(.+)/);
@@ -1241,6 +1991,41 @@
       if (!proys.length) return "Todavía no tienes proyectos, Cesar. Dime: crea el proyecto… y lo armamos.";
       return "Tienes " + proys.length + " proyecto(s): " + proys.map(function(p){ return p.nombre + " (" + p.estado + ", " + p.avances.length + (p.avances.length === 1 ? " avance" : " avances") + ")"; }).join("; ") + ".";
     }
+    /* Fase 2.11 — Puente de aprendizaje: "guarda este punto..." y
+       consulta. Funciona en local aunque no haya cerebro; el punto
+       también queda en tu registro (tipo "aprendizaje") y en Sheets,
+       y el cerebro lo ve entre tus últimos registros. */
+    m = f.match(/guarda (?:este )?punto(?: que (?:investigu[eé]|hablamos|aprendimos|vimos|estudiamos))?[:\s]+(.+)/);
+    if (m && m[1].trim()) {
+      guardarPunto(m[1].trim());
+      mostrarEstado("aviso");
+      return "Guardando... listo. Punto guardado.";
+    }
+    m = f.match(/guarda esto que investigu[eé][: \s]+(.+)/);
+    if (m && m[1].trim()) {
+      guardarPunto(m[1].trim());
+      mostrarEstado("aviso");
+      return "Guardando... listo. Punto guardado.";
+    }
+    m = f.match(/guarda este aprendizaje[:\s]+(.+)/);
+    if (m && m[1].trim()) {
+      guardarPunto(m[1].trim());
+      mostrarEstado("aviso");
+      return "Guardando... listo. Punto guardado.";
+    }
+    if (/qu[eé] puntos guard[eé]|qu[eé] aprend[ií]/.test(f)) {
+      var perA = /hoy/.test(f) ? "hoy" : /este mes|el mes/.test(f) ? "mes" : "semana";
+      var cuandoA = perA === "hoy" ? "hoy" : perA === "mes" ? "este mes" : "esta semana";
+      var puntosA = cargarAprendizaje().filter(function(p){
+        if (perA === "hoy") return esHoy(p.fecha);
+        var rgA = rangoPeriodo(perA);
+        var t = new Date(p.fecha).getTime();
+        return t >= rgA.inicio.getTime() && t <= rgA.fin.getTime();
+      });
+      if (!puntosA.length) return "No guardaste puntos " + cuandoA + ", Cesar. Dime: guarda este punto: y lo que aprendiste.";
+      var ultimosA = puntosA.slice(-5).map(function(p){ return p.texto; });
+      return "Guardaste " + puntosA.length + " punto(s) " + cuandoA + (puntosA.length > 5 ? ". Te leo los últimos 5" : "") + ": " + ultimosA.join("; ") + ".";
+    }
     m = f.match(/(?:recu[eé]rdame|recuerda|agenda)\s+(.+)/);
     if (m) {
       var conHora = parseHoraRecordatorio(m[1].trim());
@@ -1285,10 +2070,10 @@
       return r.length ? ("Tienes " + r.length + " cosas guardadas. La última es: " + r[r.length - 1].texto) : "Tu registro está vacío todavía.";
     }
     if (/hola|buenos d[ií]as|buenas tardes|buenas noches|c[oó]mo est[aá]s/.test(f)) {
-      return "Hola, Cesar. Soy Chelsea, tu Orb. Estoy aquí, escuchándote. ¿Qué anotamos hoy?";
+      return "Hola, Cesar. Estoy aquí, escuchándote. ¿Qué anotamos hoy?";
     }
     if (/gracias/.test(f)) return "De nada, Cesar. Para eso estoy.";
-    if (/qui[eé]n eres|tu nombre/.test(f)) return "Soy Chelsea, tu Orb personal. Solo mis letras, tu voz y tu registro privado.";
+    if (/qui[eé]n eres|tu nombre/.test(f)) return "Soy tu Orb personal. Solo mis letras, tu voz y tu registro privado.";
     if (/abre (?:la )?configuraci[oó]n|configuraci[oó]n|ajustes/.test(f)) {
       panel.classList.add("abierto");
       return "Te abrí la configuración, Cesar. Ahí cambias la cara, el fondo y exportas tu registro.";
@@ -1325,7 +2110,7 @@
       return "Yo bien, con mis letras girando, Cesar. ¿Y tú, cómo te sientes hoy?";
     }
     if (/qu[eé] puedes hacer|qu[eé] sabes hacer|ayuda|ay[uú]dame/.test(f)) {
-      return "Puedo anotar tus gastos e ingresos y darte reportes de la semana, el mes o el año; agendar citas y tareas con aviso; guardar tus ideas y seguir tus proyectos; armar tu FODA preguntándote una cosa a la vez; y decirte cómo vas hoy o en la semana. Si me conectas el cerebro en Configuración, ya platico de todo como amigo.";
+      return "Puedo anotar tus gastos e ingresos y darte reportes de la semana, el mes o el año; agendar citas y tareas con aviso; guardar tus ideas y seguir tus proyectos; armar tu FODA preguntándote una cosa a la vez; y decirte cómo vas hoy o en la semana. Si me conectas el cerebro en Configuración, ya platico de todo como amigo, y con Gemini mejoro tus ideas y proyectos. Y por voz te armo un Excel de tus ideas, tus proyectos, tus gastos o todo tu registro.";
     }
     if (/cu[eé]ntame (?:un )?chiste|hazme re[ií]r/.test(f)) {
       return "¿Qué le dice una letra a otra? Nos vemos en la órbita. Ya sé, malo, pero soy solo letras, Cesar.";
@@ -1345,11 +2130,27 @@
   function contextoParaCerebro() {
     var r = cargar(CLAVE);
     var ultimos = cargar(CLAVE_CHARLA).slice(-8).map(function(e){ return (e.rol === "tu" ? "Cesar: " : "Orb: ") + e.texto; });
+    /* Fase 2.11 — El cerebro también recibe tus puntos guardados: el
+       total y los 2 más recientes, en una línea corta. Es un campo
+       nuevo y opcional: el servidor actual lo ignora sin romperse, y
+       los puntos igual le llegan entre los últimos registros (tipo
+       "aprendizaje"), así que ya puede platicar de ellos. */
+    var puntosC = cargarAprendizaje();
+    /* Fase 2.14 — Ideas y proyectos en el contexto: hasta 5 ideas
+       (solo el texto, las ideas no tienen estado) y hasta 5 proyectos
+       (nombre, estado y último avance). Corto, para que Gemini pueda
+       platicar de ellas en cualquier conversación sin mandar todo tu
+       historial. El servidor es genérico: ignora los campos que no
+       conoce, así que no hace falta cambiar nada del lado del cerebro. */
+    var dIdeasC = cargarIdeas();
     return {
       nombre: "Cesar",
       totalGastos: totalGastos(),
       ultimosRegistros: r.slice(-5),
-      historial: ultimos
+      historial: ultimos,
+      aprendizaje: { total: puntosC.length, recientes: puntosC.slice(-2).map(function(p){ return p.texto; }) },
+      ideas: dIdeasC.ideas.slice(-5).map(function(i){ return i.texto; }),
+      proyectos: dIdeasC.proyectos.slice(-5).map(function(p){ return { nombre: p.nombre, estado: p.estado, ultimoAvance: p.avances.length ? p.avances[p.avances.length - 1].texto : "" }; })
     };
   }
 
@@ -1367,6 +2168,255 @@
       if (d && d.respuesta) return String(d.respuesta);
       throw new Error("sin respuesta");
     });
+  }
+
+  /* Fase 2.14 — Mejorar ideas y proyectos con Gemini + Excel por voz.
+     El cerebro no cambia: el servidor es genérico (recibe {mensaje,
+     contexto} y responde {respuesta}), así que estas mejoras viven
+     solo en el HTML. La mejora pendiente NO se guarda en localStorage:
+     vive solo en esta sesión, como la sesión de FODA; si cierras la
+     app sin guardarla, se pierde y te lo digo al pedir guardarla. */
+  var mejoraPendiente = null;
+  /* Pregunta al cerebro con 15 s de espera, como la charla libre. */
+  function preguntarCerebroConTiempo(texto) {
+    var conTiempo = null;
+    try {
+      conTiempo = new AbortController();
+      setTimeout(function(){ try { conTiempo.abort(); } catch (e) {} }, 15000);
+    } catch (e) {}
+    var promesa = conTiempo
+      ? fetch(cerebroURL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mensaje: texto, contexto: contextoParaCerebro() }), signal: conTiempo.signal })
+      : fetch(cerebroURL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mensaje: texto, contexto: contextoParaCerebro() }) });
+    return promesa.then(function(res){
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    }).then(function(d){
+      if (d && d.respuesta) return String(d.respuesta);
+      throw new Error("sin respuesta");
+    });
+  }
+  /* Busca una idea o proyecto por nombre (coincidencia parcial, sin
+     importar mayúsculas; si varias coinciden, la primera en orden de
+     guardado). Devuelve {tipo, ref} o null. */
+  function buscarIdeaProyecto(tipo, nombre) {
+    var b = (nombre || "").toLowerCase().trim();
+    if (!b) return null;
+    var d = cargarIdeas();
+    var lista = tipo === "proyecto" ? d.proyectos : d.ideas;
+    for (var i = 0; i < lista.length; i++) {
+      var n = tipo === "proyecto" ? String(lista[i].nombre || "") : String(lista[i].texto || "");
+      var nl = n.toLowerCase();
+      if (nl.indexOf(b) !== -1 || b.indexOf(nl) !== -1) return { tipo: tipo, ref: lista[i] };
+    }
+    return null;
+  }
+  /* Pide a Gemini que mejore una idea o proyecto ya encontrado (el
+     procesar ya verificó que existe y que el cerebro está conectado).
+     Habla la respuesta de Gemini y la deja pendiente para guardarla
+     como avance. Si el cerebro no contesta, lo dice tal cual y no
+     guarda nada. */
+  function mejorarIdea(hallado) {
+    var tipo = hallado.tipo;
+    var nombreReal = tipo === "proyecto" ? hallado.ref.nombre : hallado.ref.texto;
+    var estado = tipo === "proyecto" ? hallado.ref.estado : "guardada";
+    var listaAv = tipo === "proyecto" ? hallado.ref.avances : (hallado.ref.mejoras || []);
+    var avancesTxt = listaAv.length ? listaAv.slice(-3).map(function(a){ return a.texto; }).join("; ") : "ninguno";
+    var etiqueta = tipo === "proyecto" ? "proyecto" : "idea";
+    var mensaje = "El usuario quiere mejorar esta " + etiqueta + ": '" + nombreReal + "'. Estado: " + estado + ". Avances que ya tiene: " + avancesTxt + ". Dame 3 mejoras concretas y próximos pasos, en español, corto y directo.";
+    return preguntarCerebroConTiempo(mensaje).then(function(resp){
+      mejoraPendiente = { tipo: tipo, nombre: nombreReal, texto: resp };
+      var msg = "Esto me sugiere Gemini para " + nombreReal + ", Cesar: " + resp + " Si te gusta, dime: guarda esa mejora, y la anoto como avance.";
+      mostrarFrase(msg);
+      decir(msg);
+      return { ok: true, respuesta: resp };
+    }).catch(function(){
+      var msgFallo = "No me contestó el cerebro, Cesar. Revisa que el servidor siga corriendo y vuelve a intentarlo.";
+      mostrarFrase(msgFallo);
+      decir(msgFallo);
+      return { ok: false, error: "cerebro" };
+    });
+  }
+  /* Guarda la mejora pendiente como avance en la idea: las ideas no
+     tienen avances como los proyectos, así que la mejora se cuelga de
+     la idea (campo "mejoras") y además se escribe en el registro como
+     tipo "avance" con el texto de la idea como detalle — el mismo
+     camino que usa "avance del proyecto", así llega a Sheets igual. */
+  function guardarMejoraEnIdea(nombre, texto) {
+    var d = cargarIdeas();
+    var idea = null;
+    d.ideas.forEach(function(i){
+      if (!idea && (String(i.texto || "").toLowerCase().indexOf((nombre || "").toLowerCase()) !== -1 || (nombre || "").toLowerCase().indexOf(String(i.texto || "").toLowerCase()) !== -1)) idea = i;
+    });
+    if (!idea) return null;
+    idea.mejoras = idea.mejoras || [];
+    idea.mejoras.push({ fecha: hoyISO(), texto: texto });
+    guardarObj(CLAVE_IDEAS, d);
+    guardarEntrada("avance", texto, null, idea.texto);
+    return idea;
+  }
+  /* "Guarda esa mejora": usa el camino normal de avances, así se
+     sincroniza a Sheets. Devuelve {ok, mensaje} para hablarlo. */
+  function guardarMejoraPendiente() {
+    if (!mejoraPendiente) return { ok: false, mensaje: "No tengo ninguna mejora pendiente, Cesar. Pídeme mejorar una idea primero." };
+    var mp = mejoraPendiente;
+    var guardado = null;
+    if (mp.tipo === "proyecto") guardado = agregarAvance(mp.nombre, mp.texto);
+    else guardado = guardarMejoraEnIdea(mp.nombre, mp.texto);
+    if (!guardado) {
+      mejoraPendiente = null;
+      return { ok: false, mensaje: "Ya no encontré esa " + (mp.tipo === "proyecto" ? "proyecto" : "idea") + ", Cesar. Puede que la hayas borrado." };
+    }
+    mejoraPendiente = null;
+    return { ok: true, mensaje: "Guardado como avance en tu " + (mp.tipo === "proyecto" ? "proyecto " : "idea ") + mp.nombre + "." };
+  }
+  function descartarMejora() {
+    if (!mejoraPendiente) return "No tengo ninguna mejora pendiente, Cesar.";
+    mejoraPendiente = null;
+    return "Listo, descarté esa mejora, Cesar.";
+  }
+
+  /* --- Excel por voz (Fase 2.14) --- */
+  /* Fecha corta dd/mm/aaaa para las celdas del Excel. */
+  function fechaExcel(iso) {
+    try {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return String(iso || "");
+      return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
+    } catch (e) { return String(iso || ""); }
+  }
+  /* Arma las hojas pedidas con datos reales (primera fila = encabezados).
+     "ideas" → solo Ideas; "proyectos" → solo Proyectos; "gastos" →
+     Gastos + Ingresos; "registro" → las cuatro. */
+  function datosExcel(tema) {
+    var d = cargarIdeas();
+    var reg = cargar(CLAVE);
+    var hojas = {};
+    if (tema === "ideas" || tema === "registro") {
+      hojas["Ideas"] = [["Idea", "Estado", "Fecha", "Avances", "Última mejora"]].concat(d.ideas.map(function(i){
+        var mej = i.mejoras || [];
+        return [i.texto, "guardada", fechaExcel(i.fecha), mej.length, mej.length ? mej[mej.length - 1].texto : ""];
+      }));
+    }
+    if (tema === "proyectos" || tema === "registro") {
+      hojas["Proyectos"] = [["Proyecto", "Estado", "Fecha", "Último avance"]].concat(d.proyectos.map(function(p){
+        return [p.nombre, p.estado, fechaExcel(p.creado), p.avances.length ? p.avances[p.avances.length - 1].texto : ""];
+      }));
+    }
+    if (tema === "gastos" || tema === "registro") {
+      hojas["Gastos"] = [["Fecha", "Concepto", "Monto", "Motivo"]].concat(reg.filter(function(e){ return e.tipo === "gasto"; }).map(function(e){ return [fechaExcel(e.fecha), e.texto, e.monto || 0, motivoDe(e)]; }));
+      hojas["Ingresos"] = [["Fecha", "Concepto", "Monto", "Fuente"]].concat(reg.filter(function(e){ return e.tipo === "ingreso"; }).map(function(e){ return [fechaExcel(e.fecha), e.texto, e.monto || 0, motivoDe(e)]; }));
+    }
+    return hojas;
+  }
+  function contarDatosExcel(hojas) {
+    var total = 0;
+    Object.keys(hojas).forEach(function(n){ total += Math.max(0, hojas[n].length - 1); });
+    return total;
+  }
+  /* "5 ideas y 3 proyectos" para hablarlo con números reales. */
+  function resumenExcel(hojas) {
+    var partes = [];
+    var conteos = [
+      ["Ideas", "idea", "ideas"], ["Proyectos", "proyecto", "proyectos"],
+      ["Gastos", "gasto", "gastos"], ["Ingresos", "ingreso", "ingresos"]
+    ];
+    conteos.forEach(function(c){
+      if (hojas[c[0]]) {
+        var n = hojas[c[0]].length - 1;
+        if (n > 0) partes.push(n + " " + (n === 1 ? c[1] : c[2]));
+      }
+    });
+    return formatearLista(partes);
+  }
+  function mensajeExcelVacio(tema) {
+    if (tema === "ideas") return "No tienes ideas registradas todavía, Cesar, así que no hay nada que poner en el Excel.";
+    if (tema === "proyectos") return "No tienes proyectos registrados todavía, Cesar, así que no hay nada que poner en el Excel.";
+    if (tema === "gastos") return "No tienes gastos ni ingresos registrados todavía, Cesar, así que no hay nada que poner en el Excel.";
+    return "Tu registro está vacío todavía, Cesar, así que no hay nada que poner en el Excel.";
+  }
+  function etiquetaExcel(tema) {
+    return tema === "ideas" ? "de ideas" : tema === "proyectos" ? "de proyectos" : tema === "gastos" ? "de gastos" : "de tu registro";
+  }
+  function nombreArchivoExcel(tema, ext) {
+    var h = new Date();
+    var sello = h.getFullYear() + "-" + ("0" + (h.getMonth() + 1)).slice(-2) + "-" + ("0" + h.getDate()).slice(-2);
+    var base = tema === "ideas" ? "mis-ideas" : tema === "proyectos" ? "mis-proyectos" : tema === "gastos" ? "mis-gastos" : "mi-registro";
+    return base + "-" + sello + "." + ext;
+  }
+  /* SheetJS se carga solo cuando se pide un Excel (carga perezosa):
+     sin internet la app sigue funcionando igual, y el Excel no
+     necesita la librería hasta ese momento. Devuelve true si la
+     librería quedó lista, false si no se pudo cargar. */
+  var sheetJSPromise = null;
+  function cargarSheetJS() {
+    if (typeof window !== "undefined" && window.XLSX) return Promise.resolve(true);
+    if (sheetJSPromise) return sheetJSPromise;
+    sheetJSPromise = new Promise(function(resolve){
+      var listo = false;
+      var terminar = function(ok){ if (!listo) { listo = true; resolve(ok); } };
+      try {
+        var s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+        s.onload = function(){ terminar(!!window.XLSX); };
+        s.onerror = function(){ sheetJSPromise = null; terminar(false); };
+        setTimeout(function(){ if (!listo) { sheetJSPromise = null; terminar(!!window.XLSX); } }, 10000);
+        document.head.appendChild(s);
+      } catch (e) { sheetJSPromise = null; terminar(false); }
+    });
+    return sheetJSPromise;
+  }
+  /* Una celda para CSV: se entrecomilla si trae coma, comillas o salto. */
+  function csvCelda(v) {
+    var s = String(v === null || v === undefined ? "" : v);
+    return /[",\n\r;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  /* Las mismas hojas, en un solo CSV con una sección por hoja. */
+  function csvDesdeHojas(hojas) {
+    var partes = [];
+    Object.keys(hojas).forEach(function(n){
+      partes.push("Hoja: " + n);
+      hojas[n].forEach(function(fila){ partes.push(fila.map(csvCelda).join(",")); });
+      partes.push("");
+    });
+    return partes.join("\n");
+  }
+  /* Arma y descarga el Excel (o el CSV si no hay internet para cargar
+     SheetJS). Habla el resultado con números reales. Si no hay datos
+     no descarga nada y no dice nada: el que llama ya avisó. */
+  var excelGenerando = false;
+  function generarExcel(tema) {
+    if (excelGenerando) return Promise.resolve(null);
+    var hojas = datosExcel(tema);
+    if (contarDatosExcel(hojas) <= 0) return Promise.resolve({ ok: false, error: "sin datos" });
+    excelGenerando = true;
+    mostrarFrase("Armando tu Excel " + etiquetaExcel(tema) + "…", "Un momento.");
+    var resumen = resumenExcel(hojas);
+    var etiqueta = etiquetaExcel(tema);
+    var promesa = cargarSheetJS().then(function(ok){
+      if (ok && typeof window !== "undefined" && window.XLSX) {
+        var wb = window.XLSX.utils.book_new();
+        Object.keys(hojas).forEach(function(n){ window.XLSX.utils.book_append_sheet(wb, window.XLSX.utils.aoa_to_sheet(hojas[n]), n); });
+        var buf = window.XLSX.write(wb, { bookType: "xlsx", type: "array" });
+        descargarBlob(nombreArchivoExcel(tema, "xlsx"), new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+        var msg = "Listo, Cesar, tu Excel " + etiqueta + " tiene " + resumen + ".";
+        mostrarFrase(msg);
+        decir(msg);
+        return { ok: true, formato: "xlsx", resumen: resumen };
+      }
+      var csv = csvDesdeHojas(hojas);
+      descargar(nombreArchivoExcel(tema, "csv"), csv, "text/csv");
+      var msgCsv = "Sin internet no pude hacer el Excel, Cesar, te dejé un CSV que Excel abre igual. Tu CSV " + etiqueta + " tiene " + resumen + ".";
+      mostrarFrase(msgCsv);
+      decir(msgCsv);
+      return { ok: true, formato: "csv", resumen: resumen };
+    }).catch(function(){
+      var msgFallo = "No pude armar tu Excel, Cesar. Revisa tu internet e inténtalo de nuevo.";
+      mostrarFrase(msgFallo);
+      decir(msgFallo);
+      return { ok: false, error: "fallo" };
+    });
+    promesa.then(function(){ excelGenerando = false; }, function(){ excelGenerando = false; });
+    return promesa;
   }
 
   /* Charla que no es comando: cerebro si está conectado, local si no. */
@@ -1419,19 +2469,30 @@
         else {
           // Estás hablando ahora: ojos brillan
           if (!hablando) mostrarEstado("escuchando");
-          mostrarFrase("“" + ev.results[i][0].transcript + "”", "Te estoy escuchando…");
+          /* Fase 2.10 — El eco en pantalla solo aparece si lo que se oye
+             va para Chelsea (o va en camino de serlo: "Che…"). Lo demás
+             no se muestra, aunque el micrófono siga abierto. */
+          var parcial = ev.results[i][0].transcript.trim().toLowerCase();
+          if (parcial && ("chelsea".indexOf(parcial) === 0 || parcial.indexOf("chelsea") === 0)) {
+            mostrarFrase("“" + ev.results[i][0].transcript + "”", "Te estoy escuchando…");
+          }
           clearTimeout(timerSilencio);
         }
       }
       if (finalTxt.trim()) {
-        guardarCharla("tu", finalTxt.trim());
+        /* Fase 2.10 — Palabra de activación: sin "Chelsea" al inicio, se
+           ignora en silencio. No se guarda en el chat, no se procesa,
+           no se responde, y la escucha sigue. */
+        var ordenFinal = extraerOrdenChelsea(finalTxt.trim());
+        if (ordenFinal === null) return;
+        guardarCharla("tu", ordenFinal);
         var respuesta = procesar(finalTxt.trim());
         if (respuesta) {
           guardarCharla("orb", respuesta);
           setTimeout(function(){ decir(respuesta); }, 150);
         } else {
           /* No era comando: charla libre (cerebro o local). */
-          setTimeout(function(){ manejarChatLibre(finalTxt.trim()); }, 150);
+          setTimeout(function(){ manejarChatLibre(ordenFinal); }, 150);
         }
       }
     };
@@ -1468,7 +2529,7 @@
     despertarEl.style.display = "none";
     activo = true;
     mostrarEstado("atento");
-    decir("Hola, Cesar. Soy Chelsea. Ya estoy aquí, y te estoy escuchando. Háblame cuando quieras, no tienes que tocar nada.");
+    decir("Hola, Cesar. Ya estoy aquí, y te estoy escuchando. Háblame cuando quieras, no tienes que tocar nada.");
     setTimeout(iniciarEscucha, 800);
   }
 
@@ -1499,7 +2560,7 @@
       actualizarCaraOrbita();
     });
   });
-  /* Fase 2.9 — Botón "Ver a Chelsea": muestra su foto ahora mismo. */
+  /* Fase 2.15 — Botón "Ver a Chelsea": muestra su retrato ahora mismo. */
   document.getElementById("btnVerChelsea").addEventListener("click", function(){
     panel.classList.remove("abierto");
     chelseaMostrarAhora();
@@ -1547,12 +2608,18 @@
     if (!r.length) { lista.innerHTML = "<li>Aún no hay nada guardado.</li>"; return; }
     r.slice(0, 50).forEach(function(e){
       var li = document.createElement("li");
-      li.textContent = fechaCorta(e.fecha) + " · " + e.tipo + (e.monto ? " · $" + e.monto : "") + " · " + e.texto;
+      li.textContent = fechaCorta(e.fecha) + " · " + e.tipo + (e.monto ? " · $" + e.monto : "") + " · " + e.texto + (motivoDe(e) && (e.tipo === "gasto" || e.tipo === "ingreso") ? " · motivo: " + motivoDe(e) : "");
       lista.appendChild(li);
     });
   });
   function descargar(nombre, contenido, tipo) {
     var blob = new Blob([contenido], { type: tipo || "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = nombre; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  }
+  /* Fase 2.14 — Descarga de un Blob ya armado (el .xlsx de SheetJS). */
+  function descargarBlob(nombre, blob) {
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = nombre; a.click();
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
@@ -1602,7 +2669,7 @@
   });
   document.getElementById("btnProbarVoz").addEventListener("click", function(ev){
     ev.stopPropagation();
-    decir("Hola, Cesar. Soy Chelsea, tu Orb. Esta es mi voz, ¿te gusta así o la cambiamos?");
+    decir("Hola, Cesar. Esta es mi voz, ¿te gusta así o la cambiamos?");
   });
 
   /* Cerebro Fase 2: URL guardada solo en este aparato, nunca en GitHub. */
@@ -1641,6 +2708,13 @@
     enviarASheets({ fecha: hoyISO(), tipo: "nota", texto: "Prueba Orb — conexión Sheets OK", monto: null });
     estadoSheetsEl.textContent = "Sheets: prueba enviada. Abre tu Sheet: debe aparecer una fila 'Prueba Orb — conexión Sheets OK'.";
     decir("Prueba enviada a tu Sheet, Cesar. Ábrelo y revisa que aparezca la fila de prueba.");
+  });
+  /* Fase 2.13 — Botón "Restaurar desde Sheets": trae el respaldo del
+     Sheet a este aparato. Cierra el panel para que veas la respuesta. */
+  document.getElementById("btnRestaurar").addEventListener("click", function(ev){
+    ev.stopPropagation();
+    panel.classList.remove("abierto");
+    restaurarDesdeSheets();
   });
   /* Al abrir la app, reenvía sola lo que quedó en cola. */
   setTimeout(reenviarPendientes, 1500);
@@ -1717,7 +2791,7 @@
     navigator.serviceWorker.register("orb-sw.js").catch(function(){});
   }
   mostrarEstado("dormido");
-  try { window.__orb = { procesar: procesar, cargar: cargar, guardar: guardar, cargarTareas: cargarTareas, cargarIdeas: cargarIdeas, cargarFoda: cargarFoda, alarmasPendientes: alarmasPendientes, revisarAlarmas: revisarAlarmas, reportePeriodo: reportePeriodo, totalGastos: totalGastos, totalIngresos: totalIngresos }; } catch (e) {}
+  try { window.__orb = { procesar: procesar, ordenChelsea: extraerOrdenChelsea, cargar: cargar, guardar: guardar, cargarTareas: cargarTareas, cargarIdeas: cargarIdeas, cargarFoda: cargarFoda, alarmasPendientes: alarmasPendientes, revisarAlarmas: revisarAlarmas, reportePeriodo: reportePeriodo, totalGastos: totalGastos, totalIngresos: totalIngresos, cargarAprendizaje: cargarAprendizaje, guardarPunto: guardarPunto, extraerMotivo: extraerMotivo, motivoDe: motivoDe, contextoParaCerebro: contextoParaCerebro, resumenMesGastos: resumenMesGastos, textoComparacionMes: textoComparacionMes, bloqueAlertaMes: bloqueAlertaMes, alertasAlGuardarGasto: alertasAlGuardarGasto, resumenGastosMes: resumenGastosMes, recomendacionesProximoMes: recomendacionesProximoMes, ultimoMesConGastos: ultimoMesConGastos, mesAnterior: mesAnterior, nombreMes: nombreMes, restaurarDesdeSheets: restaurarDesdeSheets, fusionarRespaldo: fusionarRespaldo, reconstruirDesdeRegistro: reconstruirDesdeRegistro, parsearFechaRespaldo: parsearFechaRespaldo, parsearCuandoCita: parsearCuandoCita, tituloSinHora: tituloSinHora, firmaRegistroLocal: firmaRegistroLocal, buscarIdeaProyecto: buscarIdeaProyecto, mejorarIdea: mejorarIdea, guardarMejoraPendiente: guardarMejoraPendiente, descartarMejora: descartarMejora, guardarMejoraEnIdea: guardarMejoraEnIdea, mejoraPendiente: function(){ return mejoraPendiente; }, datosExcel: datosExcel, contarDatosExcel: contarDatosExcel, resumenExcel: resumenExcel, mensajeExcelVacio: mensajeExcelVacio, etiquetaExcel: etiquetaExcel, nombreArchivoExcel: nombreArchivoExcel, generarExcel: generarExcel, cargarSheetJS: cargarSheetJS, csvDesdeHojas: csvDesdeHojas, csvCelda: csvCelda, fechaExcel: fechaExcel, preguntarCerebroConTiempo: preguntarCerebroConTiempo }; } catch (e) {}
 })();
 </script>
 </body>
