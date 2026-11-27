@@ -858,7 +858,7 @@ function vaciarCola() {
       clearTimeout(t); enviando = false;
       var ok = j && (j.ok || /no encontrado|no estaba/.test(j.error || ""));
       if (j && j.error === "clave invalida") { syncError = "La clave no coincide con la del Sheet."; pintarSync(); return; }
-      if (ok) { escribir(K.cola, leer(K.cola, []).filter(function (x) { return x.qid !== op.qid; })); syncError = ""; ultimaSync = new Date(); vaciarCola(); }
+      if (ok) { escribir(K.cola, leer(K.cola, []).filter(function (x) { return x.qid !== op.qid; })); syncError = ""; ultimaSync = new Date(); if (!leer(K.cola, []).length) ultimaTraida = 0; vaciarCola(); }
       else { syncError = (j && j.error) || "error"; pintarSync(); setTimeout(vaciarCola, 15000); }
     })
     .catch(function () { clearTimeout(t); enviando = false; syncError = "sin conexión"; pintarSync(); });
@@ -868,32 +868,54 @@ window.addEventListener("online", vaciarCola);
 document.addEventListener("visibilitychange", function () { if (!document.hidden) { vaciarCola(); revisarAvisos(); } });
 setInterval(vaciarCola, 45000);
 
-/* Traer desde Sheets (aparato nuevo, iPhone, etc.) — se fusiona por ID */
-function traerDeSheets() {
-  toast("Trayendo tus datos…");
+/* Traer desde Sheets — Sheets es la fuente de verdad.
+   Lo que corrijas, agregues o borres en la pestaña Registro se refleja
+   aquí. Solo se respeta lo que todavía no sube (está en la cola). */
+var trayendo = false, ultimaTraida = 0;
+function traerDeSheets(silencioso) {
+  if (trayendo || navigator.onLine === false) return Promise.resolve(0);
+  trayendo = true; if (!silencioso) toast("Trayendo tus datos…");
   return fetch(SHEETS_URL + "?accion=registros&clave=" + encodeURIComponent(claveSheets()))
     .then(function (r) { return r.json(); })
     .then(function (j) {
+      trayendo = false; ultimaTraida = Date.now();
       if (!j.ok) throw new Error(j.error || "error");
-      var ids = {}; datos.forEach(function (d) { ids[d.id] = 1; });
-      var nuevos = 0;
+      var cola = leer(K.cola, []), enCola = {}, borrando = {};
+      cola.forEach(function (op) { if (op.accion === "borrar") borrando[op.id] = 1; else enCola[op.id] = 1; });
+      var locales = {}; datos.forEach(function (d) { locales[d.id] = d; });
+      var nuevos = [], cambios = 0;
       (j.registros || []).forEach(function (r) {
-        var id = String(r.ID || ""); if (!id || ids[id]) return;
+        var id = String(r.ID || ""); if (!id || borrando[id]) return;
+        var tipo = String(r.Tipo || "").toLowerCase().trim(); if (!/^(gasto|ingreso|nota|idea|recordatorio)$/.test(tipo)) return;
         var det = {}; try { if (String(r.Detalle || "").charAt(0) === "{") det = JSON.parse(r.Detalle); } catch (e) {}
-        var tipo = String(r.Tipo || "").toLowerCase(); if (!/^(gasto|ingreso|nota|idea|recordatorio)$/.test(tipo)) return;
-        if (det.estado === "eliminado") return;
-        datos.push({ id: id, tipo: tipo, texto: r.Texto || "", monto: r.Monto === "" ? null : Number(r.Monto), fecha: r.Fecha || new Date().toISOString(),
-          categoria: det.categoria || (tipo === "gasto" ? categoriaDe(r.Texto) : tipo === "ingreso" ? categoriaIngreso(r.Texto || "") : ""),
-          motivo: det.motivo || "", emocion: det.emocion || "", fechaHora: det.fechaHora || "", estado: det.estado || (tipo === "idea" ? "viva" : tipo === "recordatorio" ? "pendiente" : "") });
-        nuevos++;
+        var viejo = locales[id] || {};
+        if (enCola[id] && locales[id]) { nuevos.push(viejo); return; }   // cambio local aún sin subir: gana el teléfono
+        var monto = (r.Monto === "" || r.Monto == null) ? null : Number(String(r.Monto).replace(/[$,\s]/g, ""));
+        var d = { id: id, tipo: tipo, texto: String(r.Texto || ""), monto: isNaN(monto) ? null : monto, fecha: r.Fecha || viejo.fecha || new Date().toISOString(),
+          categoria: det.categoria || viejo.categoria || (tipo === "gasto" ? categoriaDe(r.Texto) : tipo === "ingreso" ? categoriaIngreso(r.Texto || "") : ""),
+          motivo: det.motivo || viejo.motivo || "", emocion: det.emocion || viejo.emocion || "", fechaHora: det.fechaHora || viejo.fechaHora || "",
+          estado: det.estado || viejo.estado || (tipo === "idea" ? "viva" : tipo === "recordatorio" ? "pendiente" : ""), avisado: viejo.avisado };
+        if (!locales[id] || viejo.monto !== d.monto || viejo.texto !== d.texto || viejo.tipo !== d.tipo || viejo.fecha !== d.fecha) cambios++;
+        nuevos.push(d);
       });
-      datos.sort(function (a, b) { return new Date(a.fecha) - new Date(b.fecha); });
-      guardarDatos(); programarAvisos();
-      toast(nuevos ? "Listo: " + nuevos + " registros traídos" : "Todo estaba al día");
-      return nuevos;
+      var enSheet = {}; nuevos.forEach(function (d) { enSheet[d.id] = 1; });
+      datos.forEach(function (d) { if (enCola[d.id] && !enSheet[d.id]) nuevos.push(d); });   // nuevos que aún no suben
+      cambios += datos.filter(function (d) { return !enSheet[d.id] && !enCola[d.id]; }).length;  // borrados en Sheets
+      nuevos.sort(function (a, b) { return new Date(a.fecha) - new Date(b.fecha); });
+      datos = nuevos; guardarDatos(); programarAvisos();
+      if (!silencioso) toast(cambios ? "Listo: " + cambios + " cambios desde Sheets" : "Todo estaba al día");
+      return cambios;
     })
-    .catch(function (e) { toast(/clave/.test(e.message) ? "La clave no coincide con la del Sheet" : "No pude conectar con Sheets"); });
+    .catch(function (e) { trayendo = false; if (!silencioso) toast(/clave/.test(e.message) ? "La clave no coincide con la del Sheet" : "No pude conectar con Sheets"); });
 }
+/* Se actualiza solo: al abrir la app, al volver a ella y cada 2 minutos,
+   siempre que no haya nada esperando subir (para no pisar tus cambios). */
+function traerSiToca() {
+  if (!claveSheets() || leer(K.cola, []).length || Date.now() - ultimaTraida < 60000) return;
+  traerDeSheets(true);
+}
+document.addEventListener("visibilitychange", function () { if (!document.hidden) setTimeout(traerSiToca, 1500); });
+setInterval(traerSiToca, 120000);
 
 /* =====================================================================
    RECORDATORIOS — avisos con la app abierta o en segundo plano reciente
@@ -1241,7 +1263,7 @@ function arrancar() {
   var h = new Date().getHours();
   $("burbuja").innerHTML = (h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches") + ", César.<small>" + (esIOS ? "Tócame y cuéntame qué pasó hoy." : ajustes.manos ? "Di «Chelsea» y te escucho." : "Tócame para hablar. Desliza hacia arriba para ver tus números.") + "</small>";
   programarAvisos(); revisarAvisos(); vaciarCola();
-  if (!datos.length && claveSheets()) traerDeSheets();
+  setTimeout(function () { if (claveSheets()) traerDeSheets(true); }, 1200);
   if (ajustes.manos && !esIOS) setTimeout(iniciarEscucha, 600);
 }
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("orb-sw.js").catch(function () {});
