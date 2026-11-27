@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Orb — Fase 2.16 · Chelsea</title>
+<title>Orb — Fase 2.17 · Chelsea</title>
 <meta name="theme-color" content="#0E0C0A">
 <link rel="manifest" href="orb-manifest.json">
 <!-- Fase 2.16 — Tipografía editorial: Fraunces (serif de display) +
@@ -94,13 +94,38 @@
   /* Fase 2.16: con Órbita, la frase de abajo es la serif editorial,
      como la voz de Chelsea en el panel. */
   body[data-cara="orbita"] #frase { font-family:var(--serif); }
+  /* Fase 2.17 — La frase es ahora el lector completo: el texto entero
+     de la respuesta, en párrafo elegante que fluye hacia abajo y se
+     desplaza si es largo. Sin recortes, sin puntos suspensivos, sin
+     tope de líneas. La órbita sigue con sus 3 líneas: esa es la cara,
+     no el lector. */
   #frase {
-    position:fixed; left:0; right:0; bottom:9vh; text-align:center;
+    position:fixed; left:50%; transform:translateX(-50%);
+    bottom:9vh; width:min(640px, calc(100vw - 44px));
+    max-height:46vh; overflow-y:auto; overflow-x:hidden;
+    text-align:center;
     font-family:var(--serif); font-weight:500;
-    color:rgba(245,237,223,.92); font-size:18px; line-height:1.65; padding:0 22px;
+    color:rgba(245,237,223,.92); font-size:18px; line-height:1.7;
+    padding:14px 20px;
+    background:rgba(14,12,10,.55);
+    border:1px solid rgba(201,169,106,.18); border-radius:14px;
     opacity:0; transition:opacity .4s ease; pointer-events:none;
+    scrollbar-width:thin; scrollbar-color:rgba(201,169,106,.4) transparent;
   }
   #frase.visible { opacity:1; }
+  /* Solo captura el toque cuando el texto desborda (para desplazarlo);
+     si no desborda, el toque pasa al Orb como siempre. */
+  #frase.desplazable { pointer-events:auto; cursor:pointer; }
+  /* Fundido suave en el borde inferior cuando hay más texto abajo. */
+  #frase.desplazable {
+    -webkit-mask-image:linear-gradient(to bottom, #000 82%, transparent 100%);
+    mask-image:linear-gradient(to bottom, #000 82%, transparent 100%);
+  }
+  #frase::-webkit-scrollbar { width:4px; }
+  #frase::-webkit-scrollbar-thumb { background:rgba(201,169,106,.4); border-radius:2px; }
+  #frase::-webkit-scrollbar-track { background:transparent; }
+  /* Respuesta larga: párrafo alineado a la izquierda, como lectura. */
+  #frase.larga { text-align:left; }
   #frase small { display:block; font-family:var(--sans); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--marfil-tenue); margin-top:6px; }
   /* Fase 2.15 — El retrato de Chelsea: su ilustración de puntitos en
      un marco rectangular suave con su nombre debajo, en overlay del DOM
@@ -311,12 +336,43 @@
   function fechaCorta(iso) { try { return new Date(iso).toLocaleString("es-MX", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" }); } catch (e) { return iso; } }
 
   function mostrarEstado(n) { document.body.setAttribute("data-estado", n); if (typeof orbitaEstado === "function") orbitaEstado(n); }
+  /* Fase 2.17 — Umbral: por encima de estos caracteres la respuesta es
+     larga y se queda desplegada hasta que Cesar toque la pantalla o
+     llegue la siguiente respuesta; por debajo, se desvanece a los 6 s
+     como siempre. El texto completo vive en #frase (el lector): la
+     órbita sigue con su tope de 3 líneas, esa es la cara, no el lector. */
+  var FRASE_LARGA_CHARS = 140;
+  function ocultarFrase() {
+    clearTimeout(timerFrase);
+    fraseEl.classList.remove("visible", "larga", "desplazable");
+  }
+  /* Un toque en la pantalla oculta una respuesta larga desplegada (las
+     cortas se desvanecen solas a los 6 s). */
+  function ocultarFraseLarga() {
+    if (fraseEl.classList.contains("larga")) ocultarFrase();
+  }
   function mostrarFrase(txt, sub) {
     fraseEl.innerHTML = txt.replace(/</g, "&lt;") + (sub ? "<small>" + sub.replace(/</g, "&lt;") + "</small>" : "");
     fraseEl.classList.add("visible");
+    fraseEl.scrollTop = 0;
     clearTimeout(timerFrase);
-    timerFrase = setTimeout(function(){ fraseEl.classList.remove("visible"); }, 6000);
+    if (txt.length > FRASE_LARGA_CHARS) {
+      /* Respuesta larga: sin temporizador, se queda hasta que Cesar
+         toque la pantalla o llegue la siguiente respuesta. */
+      fraseEl.classList.add("larga");
+    } else {
+      fraseEl.classList.remove("larga");
+      timerFrase = setTimeout(function(){ fraseEl.classList.remove("visible"); }, 6000);
+    }
+    /* Solo captura el toque cuando el texto desborda (para desplazarlo);
+       si no desborda, el toque pasa al Orb como siempre. */
+    var desborda = false;
+    try { desborda = fraseEl.scrollHeight > fraseEl.clientHeight; } catch (e) {}
+    fraseEl.classList.toggle("desplazable", desborda);
   }
+  /* Tocar el lector lo oculta. Un arrastre para desplazar no dispara
+     click en el navegador, así que leer con el dedo no lo cierra. */
+  fraseEl.addEventListener("click", function(){ ocultarFrase(); });
 
   /* Fase 2.6 — Cara "Órbita de letras" de Chelsea. Un anillo de glifos
      (mayúsculas elegantes y algunos símbolos refinados) orbita alrededor de un
@@ -731,6 +787,7 @@
   if (orbitaCanvas) orbitaCanvas.addEventListener("pointerdown", function() {
     orbitaImpulso = 1;
     chelseaCancelar();
+    ocultarFraseLarga();
     despertar();
   });
   orbitaCrearGlyphs();
@@ -2535,6 +2592,7 @@
 
   document.getElementById("ojos").addEventListener("pointerdown", function(e){
     seguir(e.clientX, e.clientY);
+    ocultarFraseLarga();
     despertar();
   });
   window.addEventListener("pointermove", function(e){ seguir(e.clientX, e.clientY); });
@@ -2791,7 +2849,7 @@
     navigator.serviceWorker.register("orb-sw.js").catch(function(){});
   }
   mostrarEstado("dormido");
-  try { window.__orb = { procesar: procesar, ordenChelsea: extraerOrdenChelsea, cargar: cargar, guardar: guardar, cargarTareas: cargarTareas, cargarIdeas: cargarIdeas, cargarFoda: cargarFoda, alarmasPendientes: alarmasPendientes, revisarAlarmas: revisarAlarmas, reportePeriodo: reportePeriodo, totalGastos: totalGastos, totalIngresos: totalIngresos, cargarAprendizaje: cargarAprendizaje, guardarPunto: guardarPunto, extraerMotivo: extraerMotivo, motivoDe: motivoDe, contextoParaCerebro: contextoParaCerebro, resumenMesGastos: resumenMesGastos, textoComparacionMes: textoComparacionMes, bloqueAlertaMes: bloqueAlertaMes, alertasAlGuardarGasto: alertasAlGuardarGasto, resumenGastosMes: resumenGastosMes, recomendacionesProximoMes: recomendacionesProximoMes, ultimoMesConGastos: ultimoMesConGastos, mesAnterior: mesAnterior, nombreMes: nombreMes, restaurarDesdeSheets: restaurarDesdeSheets, fusionarRespaldo: fusionarRespaldo, reconstruirDesdeRegistro: reconstruirDesdeRegistro, parsearFechaRespaldo: parsearFechaRespaldo, parsearCuandoCita: parsearCuandoCita, tituloSinHora: tituloSinHora, firmaRegistroLocal: firmaRegistroLocal, buscarIdeaProyecto: buscarIdeaProyecto, mejorarIdea: mejorarIdea, guardarMejoraPendiente: guardarMejoraPendiente, descartarMejora: descartarMejora, guardarMejoraEnIdea: guardarMejoraEnIdea, mejoraPendiente: function(){ return mejoraPendiente; }, datosExcel: datosExcel, contarDatosExcel: contarDatosExcel, resumenExcel: resumenExcel, mensajeExcelVacio: mensajeExcelVacio, etiquetaExcel: etiquetaExcel, nombreArchivoExcel: nombreArchivoExcel, generarExcel: generarExcel, cargarSheetJS: cargarSheetJS, csvDesdeHojas: csvDesdeHojas, csvCelda: csvCelda, fechaExcel: fechaExcel, preguntarCerebroConTiempo: preguntarCerebroConTiempo }; } catch (e) {}
+  try { window.__orb = { mostrarFrase: mostrarFrase, ocultarFrase: ocultarFrase, procesar: procesar, ordenChelsea: extraerOrdenChelsea, cargar: cargar, guardar: guardar, cargarTareas: cargarTareas, cargarIdeas: cargarIdeas, cargarFoda: cargarFoda, alarmasPendientes: alarmasPendientes, revisarAlarmas: revisarAlarmas, reportePeriodo: reportePeriodo, totalGastos: totalGastos, totalIngresos: totalIngresos, cargarAprendizaje: cargarAprendizaje, guardarPunto: guardarPunto, extraerMotivo: extraerMotivo, motivoDe: motivoDe, contextoParaCerebro: contextoParaCerebro, resumenMesGastos: resumenMesGastos, textoComparacionMes: textoComparacionMes, bloqueAlertaMes: bloqueAlertaMes, alertasAlGuardarGasto: alertasAlGuardarGasto, resumenGastosMes: resumenGastosMes, recomendacionesProximoMes: recomendacionesProximoMes, ultimoMesConGastos: ultimoMesConGastos, mesAnterior: mesAnterior, nombreMes: nombreMes, restaurarDesdeSheets: restaurarDesdeSheets, fusionarRespaldo: fusionarRespaldo, reconstruirDesdeRegistro: reconstruirDesdeRegistro, parsearFechaRespaldo: parsearFechaRespaldo, parsearCuandoCita: parsearCuandoCita, tituloSinHora: tituloSinHora, firmaRegistroLocal: firmaRegistroLocal, buscarIdeaProyecto: buscarIdeaProyecto, mejorarIdea: mejorarIdea, guardarMejoraPendiente: guardarMejoraPendiente, descartarMejora: descartarMejora, guardarMejoraEnIdea: guardarMejoraEnIdea, mejoraPendiente: function(){ return mejoraPendiente; }, datosExcel: datosExcel, contarDatosExcel: contarDatosExcel, resumenExcel: resumenExcel, mensajeExcelVacio: mensajeExcelVacio, etiquetaExcel: etiquetaExcel, nombreArchivoExcel: nombreArchivoExcel, generarExcel: generarExcel, cargarSheetJS: cargarSheetJS, csvDesdeHojas: csvDesdeHojas, csvCelda: csvCelda, fechaExcel: fechaExcel, preguntarCerebroConTiempo: preguntarCerebroConTiempo }; } catch (e) {}
 })();
 </script>
 </body>
