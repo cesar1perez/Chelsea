@@ -158,6 +158,9 @@ nav#tabs button.on svg{color:var(--oro)}
 #teclado button{width:72px;height:72px;border-radius:50%;background:var(--tarjeta);font-size:26px;font-weight:300}
 #teclado button:active{background:#232b44}
 #teclado button.mudo{background:none;font-size:14px;color:var(--tenue)}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chips button{padding:8px 12px;border-radius:999px;background:var(--tarjeta);border:1px solid var(--borde);font-size:13px;color:var(--tenue)}
+.chips button.on{background:rgba(242,181,107,.16);border-color:var(--oro);color:var(--oro2)}
 .toast{position:fixed;left:50%;top:calc(14px + var(--seguro-arriba));transform:translateX(-50%);background:#1b2236;border:1px solid var(--borde);padding:10px 16px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none}
 .toast.ver{opacity:1}
 </style>
@@ -171,6 +174,7 @@ nav#tabs button.on svg{color:var(--oro)}
   <p id="candadoTexto">Escribe tu clave</p>
   <div id="puntos"><i></i><i></i><i></i><i></i><i></i><i></i></div>
   <div id="teclado"></div>
+  <button id="btnBio" class="boton" style="max-width:260px;display:none">Usar Face ID / huella</button>
 </div>
 
 <!-- ORBE: Chelsea hecha de puntos. Tócala para hablar; desliza hacia arriba para tus números. -->
@@ -264,6 +268,7 @@ nav#tabs button.on svg{color:var(--oro)}
   <div class="interruptor"><div>Manos libres<small>Escucha siempre; actívala diciendo «Chelsea». Mejor en Android.</small></div><div class="sw" id="swManos"></div></div>
   <div class="interruptor"><div>Chelsea habla en voz alta<small>Si lo apagas, solo responde en pantalla.</small></div><div class="sw" id="swVoz"></div></div>
   <div class="interruptor"><div>Pedir clave al abrir<small>Protege tus gastos en este aparato.</small></div><div class="sw" id="swCandado"></div></div>
+  <div class="interruptor" id="filaBio"><div>Entrar con Face ID / huella<small>En lugar de escribir la clave.</small></div><div class="sw" id="swBio"></div></div>
   <button class="boton" id="btnCambiarClave">Cambiar mi clave</button>
   <button class="boton" id="btnTraer">Traer todo desde Google Sheets</button>
   <button class="boton" id="btnSubir">Reenviar pendientes ahora</button>
@@ -271,6 +276,19 @@ nav#tabs button.on svg{color:var(--oro)}
   <p class="ayuda" id="infoSync" style="margin-top:14px"></p>
   <p class="ayuda">Dile cosas como: «gasté 120 en gasolina porque ya no tenía», «me pagaron 2300 de Llanterama», «recuérdame mañana a las 9 pagar la luz», «se me ocurrió una app para vendedores», «anota que el cliente quiere 4 llantas», «¿cómo voy este mes?», «borra lo último».</p>
   <button class="boton oro" data-cerrar>Listo</button>
+</div></div>
+
+<!-- Ficha de un movimiento: corregir, recategorizar o borrar -->
+<div class="capa" id="capaEditar"><div class="hoja">
+  <h3 id="edTitulo">Movimiento</h3>
+  <div class="campo"><label>Concepto</label><input id="edTexto"></div>
+  <div class="campo"><label>Monto</label><input id="edMonto" inputmode="decimal"></div>
+  <div class="campo"><label>Categoría</label><div class="chips" id="edCats"></div></div>
+  <div class="campo" id="edEmoCampo"><label>¿Por qué?</label><div class="chips" id="edEmos"></div></div>
+  <div class="campo"><label>Motivo en tus palabras (opcional)</label><input id="edMotivo" placeholder="ej. ya no tenía gasolina"></div>
+  <button class="boton oro" id="edGuardar">Guardar cambios</button>
+  <button class="boton" id="edBorrar" style="color:var(--coral)">Borrar este registro</button>
+  <button class="boton" data-cerrar>Cancelar</button>
 </div></div>
 
 <div class="toast" id="toast"></div>
@@ -369,7 +387,26 @@ var CATEGORIAS = [
   ["Deudas y ahorro", "🏦", /tarjeta|credito|mensualidad|abono|prestamo|deuda|ahorro|inversion|afore|cetes/]
 ];
 var ICONO_ING = "💰";
+/* Lo que Chelsea aprende de tus correcciones: concepto → categoría y motivo */
+var aprendido = leer("chelsea4_aprendido", {});
+function claveConcepto(t) { return sinAcentos(t).toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(function (w) { return w.length > 2 && !/^(los|las|una|unos|unas|del|para|con)$/.test(w); }).slice(0, 2).join(" "); }
+function recordado(t) { var k = claveConcepto(t); if (aprendido[k]) return aprendido[k]; var w = k.split(" ")[0]; return w ? aprendido[w] || null : null; }
+function aprender(t, cat, emo) {
+  var k = claveConcepto(t), w = k.split(" ")[0]; if (!k) return;
+  aprendido[k] = { c: cat, e: emo }; if (w && w !== k) aprendido[w] = { c: cat, e: emo };
+  escribir("chelsea4_aprendido", aprendido);
+}
+/* Motivo obvio según la categoría: comer, la luz o la gasolina son necesidad
+   básica; un helado o un café de paso, antojo. Solo se pregunta lo dudoso. */
+function emocionObvia(concepto, cat) {
+  var s = sinAcentos(concepto).toLowerCase();
+  if (/helado|nieve|pastel|dulce|chocolate|botana|papitas|galleta|cafe|starbucks|refresco|antojit|postre|frappe|donas|churro/.test(s)) return "Antojo";
+  if (/chela|cerveza|bar\b|antro|cine|netflix|spotify|juego|concierto/.test(s)) return "Gusto";
+  return { "Comida": "Necesidad", "Súper": "Necesidad", "Casa y servicios": "Necesidad", "Salud": "Necesidad", "Transporte": "Necesidad",
+           "Deudas y ahorro": "Necesidad", "Mascotas": "Cariño", "Aprender": "Crecer", "Trabajo y negocio": "Trabajo", "Regalos": "Cariño", "Diversión": "Gusto" }[cat] || "";
+}
 function categoriaDe(t) {
+  var r0 = recordado(t); if (r0 && r0.c) return r0.c;
   var s = sinAcentos(t).toLowerCase();
   for (var i = 0; i < CATEGORIAS.length; i++) if (CATEGORIAS[i][2].test(s)) return CATEGORIAS[i][0];
   return "Otros";
@@ -386,7 +423,8 @@ var EMOCIONES = [
   ["Convivir",    /con (mis )?amig|con mi novia|con la familia|con mi familia|invite|invitar|salida con|con los compas|con el equipo/],
   ["Cariño",      /para mi novia|para mi mama|para mi papa|para alguien|de regalo|sorpresa|detalle/],
   ["Crecer",      /aprend|curso|invertir|inversion|para el negocio|para mi proyecto|mejorar|crecer|herramienta/],
-  ["Trabajo",     /trabajo|chamba|oficina|cliente|llanterama/]
+  ["Trabajo",     /trabajo|chamba|oficina|cliente|llanterama/],
+  ["Gusto",       /porque quise|me dio gusto|por gusto|me lo compre|me consenti|para mi/]
 ];
 function emocionDe(t) {
   var s = sinAcentos(t).toLowerCase();
@@ -537,7 +575,9 @@ var pregunta = null; // { tipo:"nota", texto }
 function ejecutar(int) {
   switch (int.accion) {
     case "gasto": case "ingreso": {
-      var r = agregar({ tipo: int.accion, texto: int.texto, monto: int.monto, categoria: int.categoria, motivo: int.motivo, emocion: int.emocion, fecha: int.fecha });
+      var emo = int.emocion;
+      if (!emo && int.accion === "gasto") { var rec0 = recordado(int.texto); emo = (rec0 && rec0.e) || emocionObvia(int.texto, int.categoria); }
+      var r = agregar({ tipo: int.accion, texto: int.texto, monto: int.monto, categoria: int.categoria, motivo: int.motivo, emocion: emo, fecha: int.fecha });
       irSuave("inicio");
       return frasesDinero(r);
     }
@@ -598,14 +638,14 @@ function frasesDinero(r) {
   var esG = r.tipo === "gasto";
   var base = (esG ? "Anoté " : "Qué bien. Registré ") + dineroDicho(r.monto) + (esG ? " en " : " de ") + r.texto + ".";
   var extra = "";
-  if (esG && r.emocion) {
+  if (esG && r.emocion && r.emocion !== "Necesidad") {
     var sem = movimientos("semana").filter(function (d) { return d.tipo === "gasto" && d.emocion === r.emocion; });
     var tot = sem.reduce(function (a, d) { return a + d.monto; }, 0);
-    var com = { "Antojo": "en antojos", "Impulso": "por impulso", "Estrés": "cuando andas estresado", "Celebración": "en celebrar", "Necesidad": "en necesidades", "Convivir": "conviviendo", "Cariño": "en detalles para otros", "Crecer": "en crecer", "Trabajo": "por trabajo" }[r.emocion] || "";
+    var com = { "Antojo": "en antojos", "Impulso": "por impulso", "Estrés": "cuando andas estresado", "Celebración": "en celebrar", "Necesidad": "en necesidades", "Convivir": "conviviendo", "Cariño": "en detalles para otros", "Crecer": "en crecer", "Trabajo": "por trabajo", "Gusto": "en darte gustos" }[r.emocion] || "";
     if (sem.length > 1) extra = " Esta semana llevas " + dineroDicho(tot) + " " + com + ".";
     if (r.emocion === "Estrés") extra += " Ojalá el día mejore.";
     if (r.emocion === "Crecer") extra += " Buena inversión en ti.";
-  } else if (esG && !r.motivo) {
+  } else if (esG && !r.emocion) {
     extra = " Si quieres, dime por qué y lo guardo.";
     pregunta = { tipo: "motivo", id: r.id };
   }
@@ -1034,6 +1074,7 @@ document.addEventListener("click", function (e) {
   var x = e.target.closest("[data-borrar]"); if (x) { var d = buscar(x.dataset.borrar); if (d && confirm("¿Borrar «" + d.texto + "»?")) { borrar(d.id); toast("Borrado"); } return; }
   var c = e.target.closest("[data-check]"); if (c) { var dc = buscar(c.dataset.check); if (dc) cambiarEstado(dc.id, dc.estado === "hecho" ? "pendiente" : "hecho"); return; }
   var a = e.target.closest("[data-archivar]"); if (a) { var da = buscar(a.dataset.archivar); if (da) cambiarEstado(da.id, da.estado === "archivada" ? "viva" : "archivada"); return; }
+  var mvi = e.target.closest(".item[data-id]"); if (mvi && !e.target.closest("button")) { var dm = buscar(mvi.dataset.id); if (dm && (dm.tipo === "gasto" || dm.tipo === "ingreso")) { abrirFicha(dm); return; } }
   var it = e.target.closest(".item"); if (it) { document.querySelectorAll(".item.abierto").forEach(function (o) { if (o !== it) o.classList.remove("abierto"); }); it.classList.toggle("abierto"); }
   if (e.target.closest("[data-cerrar]") || e.target.classList.contains("capa")) document.querySelectorAll(".capa").forEach(function (c2) { c2.classList.remove("abierta"); });
 });
@@ -1064,8 +1105,43 @@ $("btnCerrarPanel").addEventListener("click", cerrarPanel);
   $("app").addEventListener("touchend", function (e) { if (py !== null && e.changedTouches[0].clientY - py > 90) cerrarPanel(); py = null; }, { passive: true });
 })();
 
+/* Ficha de edición */
+var fichaId = null, fichaCat = "", fichaEmo = "";
+var CATS_ING = ["Trabajo", "Ventas y proyectos", "Regalo", "Otros ingresos"];
+var EMOS = ["Necesidad", "Antojo", "Gusto", "Impulso", "Estrés", "Celebración", "Convivir", "Cariño", "Crecer", "Trabajo"];
+function chips(id, lista, actual, alElegir) {
+  var el = $(id); el.innerHTML = "";
+  lista.forEach(function (x) { var b = document.createElement("button"); b.type = "button"; b.textContent = x; if (x === actual) b.className = "on";
+    b.addEventListener("click", function () { alElegir(x); el.querySelectorAll("button").forEach(function (o) { o.classList.toggle("on", o === b); }); }); el.appendChild(b); });
+}
+function abrirFicha(d) {
+  fichaId = d.id; fichaCat = d.categoria || ""; fichaEmo = d.emocion || "";
+  $("edTitulo").textContent = d.tipo === "gasto" ? "Gasto · " + fechaCorta(d.fecha) : "Ingreso · " + fechaCorta(d.fecha);
+  $("edTexto").value = d.texto; $("edMonto").value = d.monto || ""; $("edMotivo").value = d.motivo || "";
+  chips("edCats", d.tipo === "gasto" ? CATEGORIAS.map(function (c) { return c[0]; }).concat(["Otros"]) : CATS_ING, fichaCat, function (x) { fichaCat = x; });
+  chips("edEmos", EMOS, fichaEmo, function (x) { fichaEmo = x; });
+  $("capaEditar").classList.add("abierta");
+}
+$("edGuardar").addEventListener("click", function () {
+  var d = buscar(fichaId); if (!d) return;
+  var monto = Number(String($("edMonto").value).replace(/[$,\s]/g, ""));
+  if (!monto || isNaN(monto)) { toast("Revisa el monto"); return; }
+  var cambioCat = d.categoria !== fichaCat || d.emocion !== fichaEmo;
+  d.texto = cap($("edTexto").value.trim() || d.texto); d.monto = monto; d.categoria = fichaCat; d.emocion = fichaEmo; d.motivo = $("edMotivo").value.trim();
+  if (cambioCat && d.tipo === "gasto") aprender(d.texto, fichaCat, fichaEmo);
+  guardarDatos();
+  encolar({ accion: "editar", id: d.id, texto: d.texto, monto: d.monto, categoria: d.categoria, motivo: d.motivo, emocion: d.emocion, detalle: JSON.stringify(detalleDe(d)) });
+  $("capaEditar").classList.remove("abierta");
+  toast(cambioCat && d.tipo === "gasto" ? "Guardado. La próxima vez lo categorizo así" : "Guardado");
+});
+$("edBorrar").addEventListener("click", function () {
+  var d = buscar(fichaId); if (!d) return;
+  if (confirm("¿Borrar " + dinero(d.monto) + " de «" + d.texto + "»?")) { borrar(d.id); $("capaEditar").classList.remove("abierta"); toast("Borrado"); }
+});
+
 /* Ajustes */
 function pintarAjustes() {
+  $("swBio").classList.toggle("on", !!leer(K_BIO, ""));
   $("swManos").classList.toggle("on", !!ajustes.manos); $("swVoz").classList.toggle("on", !!ajustes.voz); $("swCandado").classList.toggle("on", !!ajustes.candado); pintarMic();
 }
 $("btnAjustes").addEventListener("click", function () { pintarAjustes(); pintarSync(); $("capaAjustes").classList.add("abierta"); });
@@ -1075,6 +1151,39 @@ $("swManos").addEventListener("click", function () {
 });
 $("swVoz").addEventListener("click", function () { ajustes.voz = !ajustes.voz; escribir(K.ajustes, ajustes); pintarAjustes(); });
 $("swCandado").addEventListener("click", function () { ajustes.candado = !ajustes.candado; escribir(K.ajustes, ajustes); pintarAjustes(); });
+var K_BIO = "chelsea4_bio";
+function b64(buf) { return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+function deB64(t) { t = t.replace(/-/g, "+").replace(/_/g, "/"); while (t.length % 4) t += "="; var s2 = atob(t), a = new Uint8Array(s2.length); for (var i = 0; i < s2.length; i++) a[i] = s2.charCodeAt(i); return a; }
+function retoAzar() { var a = new Uint8Array(32); crypto.getRandomValues(a); return a; }
+function bioPosible() {
+  if (!window.PublicKeyCredential || !PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) return Promise.resolve(false);
+  return PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(function () { return false; });
+}
+function activarBio() {
+  return navigator.credentials.create({ publicKey: {
+    challenge: retoAzar(), rp: { name: "Chelsea" },
+    user: { id: retoAzar().slice(0, 16), name: "cesar", displayName: "César" },
+    pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+    authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "discouraged" }, timeout: 60000
+  } }).then(function (c) { escribir(K_BIO, b64(c.rawId)); toast("Listo: entra con tu cara o tu huella"); return true; });
+}
+function usarBio() {
+  var id = leer(K_BIO, ""); if (!id) return Promise.reject(new Error("sin bio"));
+  return navigator.credentials.get({ publicKey: { challenge: retoAzar(), allowCredentials: [{ type: "public-key", id: deB64(id) }], userVerification: "required", timeout: 60000 } });
+}
+function abrirConBio() {
+  usarBio().then(function () {
+    $("candado").classList.remove("abierto"); arrancar();
+  }).catch(function () { $("candadoTexto").textContent = "Escribe tu clave"; });
+}
+$("btnBio").addEventListener("click", abrirConBio);
+$("swBio").addEventListener("click", function () {
+  if (leer(K_BIO, "")) { escribir(K_BIO, ""); pintarAjustes(); toast("Face ID / huella desactivado"); return; }
+  bioPosible().then(function (ok) {
+    if (!ok) { toast("Este teléfono no lo permite en la app"); return; }
+    activarBio().then(pintarAjustes).catch(function () { toast("No se pudo activar"); });
+  });
+});
 $("btnCambiarClave").addEventListener("click", function () { $("capaAjustes").classList.remove("abierta"); abrirCandado("nueva"); });
 $("btnTraer").addEventListener("click", function () { traerDeSheets(); });
 $("btnSubir").addEventListener("click", function () { syncError = ""; vaciarCola(); toast("Reintentando…"); });
@@ -1098,6 +1207,9 @@ function abrirCandado(modo) {
   $("candadoTitulo").textContent = modo === "abrir" ? "Hola, César" : modo === "nueva" ? "Crea tu clave" : "Confírmala";
   $("candadoTexto").textContent = modo === "abrir" ? "Escribe tu clave" : modo === "nueva" ? "6 números. Será también la llave de tu Google Sheet." : "Escríbela otra vez";
   $("candado").classList.add("abierto");
+  var hayBio = modo === "abrir" && !!leer(K_BIO, "");
+  $("btnBio").style.display = hayBio ? "block" : "none";
+  if (hayBio) { $("candadoTexto").textContent = "Mírame o pon tu huella"; setTimeout(abrirConBio, 350); }
 }
 function pintarPuntos() { document.querySelectorAll("#puntos i").forEach(function (p, i) { p.classList.toggle("lleno", i < pin.length); }); }
 function malPin(msg) { var p = $("puntos"); p.classList.remove("mal"); void p.offsetWidth; p.classList.add("mal"); pin = ""; pintarPuntos(); if (msg) $("candadoTexto").textContent = msg; }
