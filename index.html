@@ -7,11 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Chelsea">
+<meta name="apple-mobile-web-app-title" content="Orb">
 <link rel="manifest" href="orb-manifest.json">
 <link rel="apple-touch-icon" href="orb-icon-192.png">
 <link rel="icon" href="orb-icon-192.png">
-<title>Chelsea</title>
+<title>Orb</title>
 <style>
 :root{
   --noche:#07090f; --noche2:#0d111c; --tarjeta:#121726; --borde:#1e2538;
@@ -146,7 +146,8 @@ nav#tabs button.on svg{color:var(--oro)}
 /* ---------- Candado ---------- */
 #candado{position:fixed;inset:0;z-index:50;background:var(--noche);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:30px}
 #candado.abierto{display:flex}
-#candado img{width:96px;height:96px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 1px var(--borde),0 0 50px rgba(242,181,107,.15)}
+.mini-orbe{width:92px;height:92px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#ffe2b4 0%,#f2b56b 30%,rgba(242,181,107,.25) 60%,rgba(242,181,107,0) 72%);animation:respira 4.8s ease-in-out infinite;filter:blur(.3px)}
+@keyframes respira{0%,100%{transform:scale(.94);opacity:.8}50%{transform:scale(1.04);opacity:1}}
 #candado h2{margin:0;font-weight:500;font-size:20px}
 #candado p{margin:0;color:var(--tenue);font-size:14px;text-align:center;max-width:300px}
 #puntos{display:flex;gap:14px;height:16px}
@@ -169,7 +170,7 @@ nav#tabs button.on svg{color:var(--oro)}
 
 <!-- Candado con clave -->
 <div id="candado">
-  <img src="orb-chelsea.jpg" alt="">
+  <div class="mini-orbe"></div>
   <h2 id="candadoTitulo">Hola, César</h2>
   <p id="candadoTexto">Escribe tu clave</p>
   <div id="puntos"><i></i><i></i><i></i><i></i><i></i><i></i></div>
@@ -177,7 +178,7 @@ nav#tabs button.on svg{color:var(--oro)}
   <button id="btnBio" class="boton" style="max-width:260px;display:none">Usar Face ID / huella</button>
 </div>
 
-<!-- ORBE: Chelsea hecha de puntos. Tócala para hablar; desliza hacia arriba para tus números. -->
+<!-- ORBE: una presencia de puntos. Tócala para hablar; desliza hacia arriba para tus números. -->
 <div id="orbe">
   <canvas id="lienzo"></canvas>
   <div id="sync"><i></i><span>al día</span></div>
@@ -194,7 +195,7 @@ nav#tabs button.on svg{color:var(--oro)}
 
 <div id="app">
   <header class="barra">
-    <button class="icono-btn" id="btnCerrarPanel" aria-label="Volver con Chelsea">
+    <button class="icono-btn" id="btnCerrarPanel" aria-label="Volver al orbe">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
     </button>
     <h1 id="tituloVista">Hoy</h1>
@@ -222,7 +223,7 @@ nav#tabs button.on svg{color:var(--oro)}
       <div class="cifra num" id="cifraBalance">$0</div>
       <div class="dos"><div>Ingresos <b class="num" style="color:var(--verde)" id="rIng">$0</b></div><div>Gastos <b class="num" style="color:var(--coral)" id="rGas">$0</b></div></div>
     </div>
-    <div class="seccion"><h2>Chelsea opina</h2><div class="consejo" id="consejo"></div></div>
+    <div class="seccion"><h2><span class="nombre-orbe">Orb</span> opina</h2><div class="consejo" id="consejo"></div></div>
     <div class="seccion"><h2>¿En qué se fue?</h2><div id="porCategoria"></div></div>
     <div class="seccion"><h2>¿Por qué gastaste?</h2><div id="porEmocion"></div></div>
     <div class="seccion"><h2>Movimientos</h2><div class="lista" id="movimientos"></div></div>
@@ -247,7 +248,7 @@ nav#tabs button.on svg{color:var(--oro)}
 
   <div id="dock">
     <form id="entrada" autocomplete="off">
-      <input id="texto" placeholder="Escríbele a Chelsea… «gasté 80 en tacos por antojo»" enterkeyhint="send">
+      <input id="texto" placeholder="Escríbele… «gasté 80 en tacos por antojo»" enterkeyhint="send">
       <button type="button" id="mic" aria-label="Hablar">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
       </button>
@@ -265,8 +266,10 @@ nav#tabs button.on svg{color:var(--oro)}
 <!-- Ajustes -->
 <div class="capa" id="capaAjustes"><div class="hoja">
   <h3>Ajustes</h3>
-  <div class="interruptor"><div>Manos libres<small>Escucha siempre; actívala diciendo «Chelsea». Mejor en Android.</small></div><div class="sw" id="swManos"></div></div>
-  <div class="interruptor"><div>Chelsea habla en voz alta<small>Si lo apagas, solo responde en pantalla.</small></div><div class="sw" id="swVoz"></div></div>
+  <div class="campo"><label>Su nombre (con él la llamas en manos libres)</label><input id="inNombre" maxlength="14" autocomplete="off"></div>
+  <div class="interruptor"><div>Manos libres<small>Escucha siempre; actívala diciendo su nombre. Mejor en Android.</small></div><div class="sw" id="swManos"></div></div>
+  <div class="interruptor"><div>Metamorfosis<small>De vez en cuando se vuelve una cara, un planeta, una roca…</small></div><div class="sw" id="swFormas"></div></div>
+  <div class="interruptor"><div>Habla en voz alta<small>Si lo apagas, solo responde en pantalla.</small></div><div class="sw" id="swVoz"></div></div>
   <div class="interruptor"><div>Pedir clave al abrir<small>Protege tus gastos en este aparato.</small></div><div class="sw" id="swCandado"></div></div>
   <div class="interruptor" id="filaBio"><div>Entrar con Face ID / huella<small>En lugar de escribir la clave.</small></div><div class="sw" id="swBio"></div></div>
   <button class="boton" id="btnCambiarClave">Cambiar mi clave</button>
@@ -310,6 +313,8 @@ function leer(k, def) { try { var v = localStorage.getItem(k); return v ? JSON.p
 function escribir(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 var datos = leer(K.datos, []);              // [{id,tipo,texto,monto,fecha,categoria,motivo,emocion,fechaHora,estado}]
 var ajustes = leer(K.ajustes, { voz: true, manos: false, candado: true });
+if (!ajustes.nombre) ajustes.nombre = "Nova";
+function NOMBRE() { return ajustes.nombre || "Nova"; }
 function guardarDatos() { escribir(K.datos, datos); pintarTodo(); }
 function uid() { try { if (crypto.randomUUID) return crypto.randomUUID(); } catch (e) {} return "c4-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 9); }
 function $(id) { return document.getElementById(id); }
@@ -505,6 +510,10 @@ function entender(original) {
     if (/^(si|sip|claro|dale|va|sale|ok|simon|andale|correcto|eso)\b/.test(s)) return { accion: "confirmar" };
     if (/^(no|nel|nop|nada|olvidalo|cancela|dejalo)\b/.test(s)) return { accion: "negar" };
   }
+  // Metamorfosis a pedido
+  var mf = s.match(/\b(?:transformate|conviertete|hazte|vuelvete|forma|hazme|ensename|muestrame)\s+(?:en\s+)?(?:un|una)?\s*(cara|rostro|planeta|roca|piedra|ojo|espiral|luna|corazon)\b/);
+  if (mf) return { accion: "forma", forma: { rostro: "cara", piedra: "roca" }[mf[1]] || mf[1] };
+  if (/\b(sorprendeme|haz algo raro|transformate|conviertete en algo)\b/.test(s)) return { accion: "forma", forma: "" };
   // Correcciones
   if (/\b(borra|elimina|quita|cancela)\b.*\b(ultimo|ultima|eso|lo de antes|lo que dije)\b|\bme equivoque\b|\bno era eso\b/.test(s)) return { accion: "borrar_ultimo" };
 
@@ -620,8 +629,14 @@ function ejecutar(int) {
       return { dice: sal + ", César. " + (hoy.gastos ? "Hoy llevas " + dineroDicho(hoy.gastos) + " gastados." : "Hoy todavía no registras gastos.") + " ¿Qué hacemos?" };
     }
     case "gracias": return { dice: "Para eso estoy, César." };
-    case "quien": return { dice: "Soy Chelsea. Cuido tus números, tus ideas y tus pendientes, y me acuerdo de por qué haces lo que haces." };
+    case "quien": return { dice: "Soy " + NOMBRE() + ". Cuido tus números, tus ideas y tus pendientes, y me acuerdo de por qué haces lo que haces." };
     case "ayuda": return { dice: "Dime lo que gastaste y por qué, lo que te pagaron, una idea, una nota o algo que recordar. Y pregúntame cómo vas cuando quieras.", nota: "«gasté 80 en tacos por antojo» · «recuérdame mañana a las 9 pagar la luz»" };
+    case "forma": {
+      var lista = ["cara", "planeta", "roca", "ojo", "espiral", "luna", "corazon"], fm = int.forma || lista[(Math.random() * lista.length) | 0];
+      setTimeout(function () { window.orbeForma && window.orbeForma(fm); }, 1800);
+      var frase = { cara: "Mírame bien.", planeta: "Un mundo para ti.", roca: "Ahora soy piedra.", ojo: "Te estoy viendo.", espiral: "Mira hacia adentro.", luna: "Media luna.", corazon: "Esto es para ti." }[fm];
+      return { dice: frase, silencioDestello: true };
+    }
     case "hora": return { dice: "Son las " + new Date().toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" }) + "." };
     case "callar": ajustes.voz = false; escribir(K.ajustes, ajustes); pintarAjustes(); return { dice: "Ok, solo te respondo en pantalla.", silencio: true };
     case "duda": {
@@ -765,17 +780,21 @@ function fonetica(w) {
 }
 function dist(a, b) { var d = [], i, j; for (i = 0; i <= a.length; i++) d[i] = [i]; for (j = 0; j <= b.length; j++) d[0][j] = j;
   for (i = 1; i <= a.length; i++) for (j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1)); return d[a.length][b.length]; }
+/* Reconoce su nombre por cómo suena, sea cual sea el que le pongas */
+var NO_ES_NOMBRE = /^(nueva|nuevo|nuevas|nuevos|nunca|novio|novia|noche)$/;
 function pareceChelsea(w) {
   var raw = sinAcentos(w).toLowerCase().replace(/[^a-z]/g, "");
-  if (raw.length < 4 || raw.length > 10 || /^(chela|chelas|chelo|chele|celso)$/.test(raw)) return false;
+  var obj = fonetica(NOMBRE());
+  if (raw.length < Math.max(2, obj.length - 2) || raw.length > obj.length + 4 || NO_ES_NOMBRE.test(raw)) return false;
   var f = fonetica(w);
-  return f.indexOf("chels") === 0 || (dist(f, "chelsi") <= (f.length >= 6 ? 2 : 1) && /^(ch|s)/.test(f));
+  if (f === obj) return true;
+  return f.charAt(0) === obj.charAt(0) && dist(f, obj) <= (obj.length >= 6 ? 2 : 1);
 }
 function buscarNombre(t) {
   var p = String(t || "").trim().split(/\s+/), i = 0;
   while (i < p.length && i < 4 && /^(eh|oye|oiga|hey|ey|ok|hola|mmm|este|bueno|a|ay)$/i.test(sinAcentos(p[i]).replace(/[^a-z]/gi, ""))) i++;
   var u = 0;
-  if (i < p.length && pareceChelsea(p[i])) u = 1; else if (i + 1 < p.length && pareceChelsea(p[i] + p[i + 1])) u = 2;
+  if (i < p.length && pareceChelsea(p[i])) u = 1; else if (fonetica(NOMBRE()).length >= 5 && i + 1 < p.length && pareceChelsea(p[i] + p[i + 1])) u = 2;
   if (!u) return null;
   var resto = p.slice(i + u).join(" ").replace(/^[\s,:.!?]+/, "");
   return { orden: resto, solo: !resto.trim() };
@@ -841,7 +860,7 @@ function procesarBuffer() {
   atender(t);
 }
 
-/* Voz de Chelsea */
+/* Su voz */
 var vozElegida = null;
 function elegirVoz() {
   var vs = speechSynthesis.getVoices().filter(function (v) { return /^es/i.test(v.lang); });
@@ -982,7 +1001,7 @@ function avisar(d) {
   var t = "Recordatorio: " + d.texto;
   try {
     if (window.Notification && Notification.permission === "granted" && navigator.serviceWorker) {
-      navigator.serviceWorker.ready.then(function (reg) { reg.showNotification("Chelsea", { body: d.texto, icon: "orb-icon-192.png", badge: "orb-icon-192.png", tag: d.id, vibrate: [120, 60, 120] }); });
+      navigator.serviceWorker.ready.then(function (reg) { reg.showNotification(NOMBRE(), { body: d.texto, icon: "orb-icon-192.png", badge: "orb-icon-192.png", tag: d.id, vibrate: [120, 60, 120] }); });
     }
   } catch (e) {}
   if (!document.hidden) responder({ dice: "César, " + t.charAt(0).toLowerCase() + t.slice(1) + "." });
@@ -994,7 +1013,7 @@ function avisar(d) {
    ===================================================================== */
 function estado(e) {
   document.body.dataset.estado = e;
-  $("estado").textContent = { dormido: esIOS || !ajustes.manos ? "tócala para hablar" : "en pausa", atento: "di «Chelsea…»", escuchando: "te escucho", hablando: "" }[e] || "";
+  $("estado").textContent = { dormido: esIOS || !ajustes.manos ? "tócala para hablar" : "en pausa", atento: "di «" + NOMBRE() + "…»", escuchando: "te escucho", hablando: "" }[e] || "";
 }
 function pintarMic() {
   var m = $("mic"); m.classList.toggle("vivo", escuchando); m.classList.toggle("manos", !!ajustes.manos && !esIOS);
@@ -1091,7 +1110,7 @@ function hablarToque() {
 $("mic").addEventListener("click", hablarToque);
 $("asa").addEventListener("click", function (e) { e.stopPropagation(); abrirPanel("hoy"); });
 $("btnCerrarPanel").addEventListener("click", cerrarPanel);
-/* Gestos sobre Chelsea: tocar = hablar · deslizar arriba = tus números */
+/* Gestos sobre el orbe: tocar = hablar · deslizar arriba = tus números */
 (function () {
   var y0 = null, x0 = 0, t0 = 0, orbe = $("orbe");
   orbe.addEventListener("pointerdown", function (e) { if (e.target.closest("button")) return; y0 = e.clientY; x0 = e.clientX; t0 = Date.now(); });
@@ -1141,14 +1160,21 @@ $("edBorrar").addEventListener("click", function () {
 
 /* Ajustes */
 function pintarAjustes() {
-  $("swBio").classList.toggle("on", !!leer(K_BIO, ""));
+  $("swBio").classList.toggle("on", !!leer(K_BIO, "")); $("inNombre").value = NOMBRE();
+  $("swFormas").classList.toggle("on", ajustes.formas !== false);
   $("swManos").classList.toggle("on", !!ajustes.manos); $("swVoz").classList.toggle("on", !!ajustes.voz); $("swCandado").classList.toggle("on", !!ajustes.candado); pintarMic();
 }
 $("btnAjustes").addEventListener("click", function () { pintarAjustes(); pintarSync(); $("capaAjustes").classList.add("abierta"); });
 $("swManos").addEventListener("click", function () {
   ajustes.manos = !ajustes.manos; escribir(K.ajustes, ajustes); pintarAjustes();
-  if (ajustes.manos) { if (esIOS) toast("En iPhone, Safari no deja escuchar siempre: toca a Chelsea para hablar"); modoToque = false; iniciarEscucha(); } else { detenerEscucha(); estado("dormido"); }
+  if (ajustes.manos) { if (esIOS) toast("En iPhone, Safari no deja escuchar siempre: toca el orbe para hablar"); modoToque = false; iniciarEscucha(); } else { detenerEscucha(); estado("dormido"); }
 });
+$("inNombre").addEventListener("change", function () {
+  var n = cap($("inNombre").value.trim().split(/\s+/)[0] || "Nova");
+  ajustes.nombre = n; escribir(K.ajustes, ajustes); pintarNombre(); toast("Ahora me llamo " + n);
+});
+function pintarNombre() { document.querySelectorAll(".nombre-orbe").forEach(function (e) { e.textContent = NOMBRE(); }); $("inNombre").value = NOMBRE(); estado(document.body.dataset.estado || "dormido"); }
+$("swFormas").addEventListener("click", function () { ajustes.formas = ajustes.formas === false; escribir(K.ajustes, ajustes); pintarAjustes(); });
 $("swVoz").addEventListener("click", function () { ajustes.voz = !ajustes.voz; escribir(K.ajustes, ajustes); pintarAjustes(); });
 $("swCandado").addEventListener("click", function () { ajustes.candado = !ajustes.candado; escribir(K.ajustes, ajustes); pintarAjustes(); });
 var K_BIO = "chelsea4_bio";
@@ -1161,7 +1187,7 @@ function bioPosible() {
 }
 function activarBio() {
   return navigator.credentials.create({ publicKey: {
-    challenge: retoAzar(), rp: { name: "Chelsea" },
+    challenge: retoAzar(), rp: { name: "Orb" },
     user: { id: retoAzar().slice(0, 16), name: "cesar", displayName: "César" },
     pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
     authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "discouraged" }, timeout: 60000
@@ -1190,7 +1216,7 @@ $("btnSubir").addEventListener("click", function () { syncError = ""; vaciarCola
 $("btnCSV").addEventListener("click", function () {
   var filas = [["Fecha", "Tipo", "Concepto", "Monto", "Categoría", "Emoción", "Motivo"]].concat(datos.filter(function (d) { return d.monto; }).map(function (d) { return [new Date(d.fecha).toLocaleString("es-MX"), d.tipo, d.texto, d.monto, d.categoria, d.emocion, d.motivo]; }));
   var csv = "﻿" + filas.map(function (f) { return f.map(function (c) { return '"' + String(c == null ? "" : c).replace(/"/g, '""') + '"'; }).join(","); }).join("\n");
-  var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "chelsea-movimientos.csv"; a.click();
+  var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "orb-movimientos.csv"; a.click();
 });
 function toast(t) { var el = $("toast"); el.textContent = t; el.classList.add("ver"); clearTimeout(el._t); el._t = setTimeout(function () { el.classList.remove("ver"); }, 2600); }
 
@@ -1238,128 +1264,153 @@ function teclear(k) {
 })();
 
 /* =====================================================================
-   CHELSEA DE PUNTOS — su silueta, viva
-   Los puntos salen de su retrato (orb-chelsea.jpg): donde el dibujo es
-   oscuro nace un punto. Respira en reposo, se enciende cuando le hablas,
-   suelta letras con lo que dices y destella cuando registra algo.
+   EL ORBE — una presencia de puntos, sin forma fija
+   Una nube que respira. Su borde se ondula lento en reposo, se agita
+   cuando le hablas (y suelta tus palabras como letras), late con su voz
+   y destella cuando registra algo. No imita a nadie: es solo presencia.
    ===================================================================== */
 (function () {
   var cv = $("lienzo"), cx = cv.getContext("2d"), W = 0, H = 0, dpr = 1;
-  var puntos = [], letras = [], destellos = [], energia = 0, brillo = 0, ultimoTexto = "", t0 = performance.now();
+  var puntos = [], letras = [], destellos = [], energia = 0, brillo = 0, ultimoTexto = "", t0 = performance.now(), R = 120;
   var ORO = [242, 190, 120], AZUL = [140, 160, 255];
-
-  function tam() {
-    dpr = Math.min(2, window.devicePixelRatio || 1); W = cv.clientWidth; H = cv.clientHeight;
-    cv.width = W * dpr; cv.height = H * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0); colocar();
-  }
-  var muestra = []; // [{u,v,peso}] en coordenadas 0..1 del retrato
-  function colocar() {
-    var lado = Math.min(W * .96, H * .66), ox = (W - lado) / 2, oy = H * .40 - lado / 2;
-    puntos.forEach(function (p) { p.hx = ox + p.u * lado; p.hy = oy + p.v * lado; if (p.x == null) { p.x = W / 2 + (Math.random() - .5) * W; p.y = H + Math.random() * 200; } });
-    escala = lado;
-  }
-  var escala = 300;
-  function crear(lista) {
-    puntos = lista.map(function (m) { return { u: m.u, v: m.v, peso: m.peso, x: null, y: null, vx: 0, vy: 0, fase: Math.random() * 6.28, r: .7 + m.peso * 1.6 }; });
-    colocar();
-  }
-  // Muestreo del retrato
-  var img = new Image();
-  img.onload = function () {
-    var N = 260, c = document.createElement("canvas"); c.width = N; c.height = N;
-    var g = c.getContext("2d"); g.drawImage(img, 0, 0, N, N);
-    var d = g.getImageData(0, 0, N, N).data, lista = [];
-    var meta = window.innerWidth < 500 ? 3600 : 4800;
-    var oscuros = [];
-    for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
-      var i = (y * N + x) * 4, lum = (d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11) / 255;
-      if (lum < .82) oscuros.push([x, y, 1 - lum]);
-    }
-    var intentos = 0;
-    while (lista.length < meta && oscuros.length && intentos++ < meta * 40) {
-      var o = oscuros[(Math.random() * oscuros.length) | 0];
-      if (Math.random() > Math.pow(o[2], 1.3) * 1.6) continue;   // lo más oscuro (contorno, ojos, collar) pesa más
-      lista.push({ u: (o[0] + Math.random()) / N, v: (o[1] + Math.random()) / N, peso: Math.min(1, o[2] * 1.5) });
-    }
-    crear(lista);
-  };
-  img.onerror = function () { // sin retrato: un orbe de puntos
-    var lista = []; for (var k = 0; k < 900; k++) { var a = Math.random() * 6.28, r = Math.sqrt(Math.random()) * .42; lista.push({ u: .5 + Math.cos(a) * r, v: .5 + Math.sin(a) * r, peso: 1 - r }); }
-    crear(lista);
-  };
-  img.src = "orb-chelsea.jpg";
+  function tam() { dpr = Math.min(2, window.devicePixelRatio || 1); W = cv.clientWidth; H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0); R = Math.min(W, H) * .27; }
   window.addEventListener("resize", tam); tam();
+  var N = window.innerWidth < 500 ? 1700 : 2400;
+  for (var i = 0; i < N; i++) {
+    var borde = Math.random() < .45;                       // casi la mitad vive en la orilla: así se lee la silueta
+    var rho = borde ? .86 + Math.random() * .16 : Math.pow(Math.random(), .6) * .9;
+    puntos.push({ th: Math.random() * 6.2832, rho: rho, fase: Math.random() * 6.28, r: .6 + Math.random() * 1.4, x: W / 2, y: H * .42, vx: 0, vy: 0, deriva: (Math.random() - .5) * .04 });
+  }
+  /* ---------- Metamorfosis: de vez en cuando la nube se vuelve algo ---------- */
+  function azar(i, k) { var x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); }
+  function anillo(i, cx0, cy0, rx, ry, k) { var a = azar(i, k) * 6.2832, j = (azar(i, k + 1) - .5) * .03; return [cx0 + Math.cos(a) * (rx + j), cy0 + Math.sin(a) * (ry + j)]; }
+  function disco(i, cx0, cy0, r, k) { var a = azar(i, k) * 6.2832, d = Math.sqrt(azar(i, k + 1)) * r; return [cx0 + Math.cos(a) * d, cy0 + Math.sin(a) * d]; }
+  var FORMAS = {
+    cara: function (i, n) {              // rostro: contorno, ojos huecos con pupila, nariz y una sonrisa demasiado larga
+      var q = i / n;
+      if (q < .42) return anillo(i, 0, 0, .78, 1.0, 1);
+      if (q < .52) return anillo(i, -.32, -.22, .17, .11, 2);
+      if (q < .62) return anillo(i, .32, -.22, .17, .11, 3);
+      if (q < .66) return disco(i, -.32, -.22, .045, 4);
+      if (q < .70) return disco(i, .32, -.22, .045, 5);
+      if (q < .76) { var y = -.08 + azar(i, 6) * .3; return [.03 * Math.sin(y * 9), y]; }
+      var x = (azar(i, 7) - .5) * 1.15; return [x, .56 - x * x * .75 + (azar(i, 8) - .5) * .03];
+    },
+    planeta: function (i, n) {
+      var q = i / n;
+      if (q < .62) { var p2 = disco(i, 0, 0, .72, 9); if (p2[0] - p2[1] > .55 && azar(i, 10) < .6) p2 = disco(i, -.1, .1, .5, 11); return p2; }
+      var a = azar(i, 12) * 6.2832, rx = 1.32 + (azar(i, 13) - .5) * .12, ry = .28;
+      var x = Math.cos(a) * rx, y = Math.sin(a) * ry; return [x * .94 - y * .34, x * .34 + y * .94];
+    },
+    roca: function (i, n) {
+      var lados = 11, a = azar(i, 14) * 6.2832, seg = Math.floor(a / 6.2832 * lados), f = a / 6.2832 * lados - seg;
+      function rr(k) { return .72 + azar(k % lados, 15) * .38; }
+      var r1 = rr(seg), r2 = rr(seg + 1), a1 = seg / lados * 6.2832, a2 = (seg + 1) / lados * 6.2832;
+      var bx = Math.cos(a1) * r1 * (1 - f) + Math.cos(a2) * r2 * f, by = Math.sin(a1) * r1 * (1 - f) + Math.sin(a2) * r2 * f;
+      var k = i / n < .5 ? 1 : Math.sqrt(azar(i, 16)); return [bx * k, by * k * .85 + .05];
+    },
+    ojo: function (i, n) {
+      var q = i / n;
+      if (q < .45) { var x = (azar(i, 17) - .5) * 2.1, h = .55 * (1 - Math.pow(x / 1.05, 2)); return [x, (azar(i, 18) < .5 ? -1 : 1) * Math.max(0, h)]; }
+      if (q < .85) return anillo(i, 0, 0, .38 - azar(i, 19) * .12, .38 - azar(i, 19) * .12, 20);
+      return disco(i, 0, 0, .14, 21);
+    },
+    espiral: function (i, n) {
+      var t2 = azar(i, 22), a = t2 * 6.2832 * 3.2, r = .08 + t2 * .95; return [Math.cos(a) * r + (azar(i, 23) - .5) * .03, Math.sin(a) * r + (azar(i, 24) - .5) * .03];
+    },
+    luna: function (i, n) {
+      for (var k = 0; k < 6; k++) { var p3 = disco(i, 0, 0, .9, 25 + k * 2); if (Math.hypot(p3[0] - .38, p3[1] + .12) > .74) return p3; }
+      return anillo(i, 0, 0, .9, .9, 40);
+    },
+    corazon: function (i, n) {
+      var a = azar(i, 41) * 6.2832, k = i / n < .55 ? 1 : Math.sqrt(azar(i, 42));
+      var x = 16 * Math.pow(Math.sin(a), 3), y = -(13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a));
+      return [x / 17 * k, y / 17 * k + .05];
+    }
+  };
+  var NOMBRES_FORMA = Object.keys(FORMAS);
+  var forma = null, mezcla = 0, formaHasta = 0, proximaForma = performance.now() + 25000 + Math.random() * 20000;
+  window.orbeForma = function (nombre) {
+    if (!FORMAS[nombre]) return false;
+    var f = FORMAS[nombre], n = puntos.length;
+    puntos.forEach(function (p, i) { var xy = f(i, n); p.fx = xy[0]; p.fy = xy[1]; });
+    forma = nombre; formaHasta = performance.now() + 6500; return true;
+  };
 
-  /* Letras: cada palabra nueva que oye sale flotando desde Chelsea */
+  /* contorno orgánico: suma de ondas lentas que nunca se repiten igual */
+  function radio(th, t, agita) {
+    return 1 + (.07 + agita * .10) * Math.sin(3 * th + t * .55)
+             + (.05 + agita * .07) * Math.sin(5 * th - t * .83 + 1.3)
+             + .04 * Math.sin(2 * th + t * .31 + 2.1)
+             + agita * .05 * Math.sin(9 * th + t * 2.7);
+  }
   window.orbeLetras = function (texto) {
-    texto = String(texto || ""); if (texto.length <= ultimoTexto.length && texto.indexOf(ultimoTexto) !== 0 && ultimoTexto.indexOf(texto) === 0) return;
-    var nuevo = texto.indexOf(ultimoTexto) === 0 ? texto.slice(ultimoTexto.length) : texto.slice(-24);
-    ultimoTexto = texto;
-    var cxm = W / 2, cym = H * .40;
+    texto = String(texto || ""); var nuevo = texto.indexOf(ultimoTexto) === 0 ? texto.slice(ultimoTexto.length) : texto.slice(-24);
+    if (!nuevo.trim()) { ultimoTexto = texto; return; } ultimoTexto = texto;
     nuevo.split("").forEach(function (ch, i) {
-      if (!ch.trim()) return;
-      var a = Math.random() * 6.28, r = escala * (.32 + Math.random() * .12);
-      letras.push({ ch: ch, x: cxm + Math.cos(a) * r, y: cym + Math.sin(a) * r, vx: Math.cos(a) * (.2 + Math.random() * .4), vy: Math.sin(a) * .3 - .35, vida: 1, retardo: i * 2, t: Math.random() * 6 });
+      if (!ch.trim()) return; var a = Math.random() * 6.28, r = R * (1.05 + Math.random() * .2);
+      letras.push({ ch: ch, x: W / 2 + Math.cos(a) * r, y: H * .42 + Math.sin(a) * r, vx: Math.cos(a) * (.25 + Math.random() * .4), vy: Math.sin(a) * .3 - .3, vida: 1, retardo: i * 2, t: Math.random() * 6 });
     });
     if (letras.length > 260) letras.splice(0, letras.length - 260);
   };
-  /* Destello: al registrar, la cifra aparece sobre ella y los puntos se sacuden */
   window.orbePulso = function (txt) {
-    ultimoTexto = "";
-    letras.forEach(function (l) { l.volver = true; });
-    brillo = 1;
+    ultimoTexto = ""; letras.forEach(function (l) { l.volver = true; }); brillo = 1;
     if (txt) destellos.push({ txt: txt, vida: 1 });
-    puntos.forEach(function (p) { var a = Math.random() * 6.28; p.vx += Math.cos(a) * 2.2; p.vy += Math.sin(a) * 2.2; });
+    puntos.forEach(function (p) { var a = Math.random() * 6.28; p.vx += Math.cos(a) * 2; p.vy += Math.sin(a) * 2; });
   };
   window.orbeToque = function (x, y) {
-    puntos.forEach(function (p) { var dx = p.x - x, dy = p.y - y, d2 = dx * dx + dy * dy; if (d2 < 9000) { var f = 3 * (1 - d2 / 9000); p.vx += dx / Math.sqrt(d2 + 1) * f; p.vy += dy / Math.sqrt(d2 + 1) * f; } });
+    puntos.forEach(function (p) { var dx = p.x - x, dy = p.y - y, d2 = dx * dx + dy * dy; if (d2 < 9000) { var f = 3.2 * (1 - d2 / 9000), d = Math.sqrt(d2 + 1); p.vx += dx / d * f; p.vy += dy / d * f; } });
   };
-
   function cuadro(now) {
     requestAnimationFrame(cuadro);
     if (document.body.classList.contains("panel") || document.hidden) return;
     var t = (now - t0) / 1000, est = document.body.dataset.estado;
-    var meta = est === "hablando" ? 1 : est === "escuchando" ? .75 : est === "atento" ? .3 : .12;
-    energia += (meta - energia) * .05; brillo *= .96;
-    var respira = Math.sin(t * 1.25) * .5 + .5;              // ~5 s por respiración
-    var hablaOnda = est === "hablando" ? (Math.sin(t * 13) * .5 + .5) * (Math.sin(t * 3.1) * .5 + .5) : 0;
-    var col = est === "hablando" ? AZUL : ORO;
-    var cxm = W / 2, cym = H * .40, esc = 1 + respira * .014 + hablaOnda * .01;
+    var meta = est === "hablando" ? 1 : est === "escuchando" ? .75 : est === "atento" ? .3 : .1;
+    energia += (meta - energia) * .04; brillo *= .96;
+    var respira = Math.sin(t * 1.25) * .5 + .5;
+    var voz = est === "hablando" ? (Math.sin(t * 13) * .5 + .5) * (Math.sin(t * 3.1) * .5 + .5) : 0;
+    var col = est === "hablando" ? AZUL : ORO, X = W / 2, Y = H * .42;
+    var escala = R * (1 + respira * .045 + voz * .05 + brillo * .06);
+    // metamorfosis espontánea solo en reposo
+    if (!forma && now > proximaForma && (est === "dormido" || est === "atento") && ajustes.formas !== false) {
+      window.orbeForma(NOMBRES_FORMA[(Math.random() * NOMBRES_FORMA.length) | 0]);
+    }
+    if (forma && (now > formaHasta || est === "escuchando")) { forma = null; proximaForma = now + 30000 + Math.random() * 40000; }
+    mezcla += ((forma ? 1 : 0) - mezcla) * .035;
     cx.clearRect(0, 0, W, H);
-    // halo que respira
-    var halo = cx.createRadialGradient(cxm, cym, 0, cxm, cym, escala * .62);
-    halo.addColorStop(0, "rgba(" + col.join(",") + "," + (.05 + respira * .035 + energia * .06 + brillo * .12).toFixed(3) + ")");
-    halo.addColorStop(1, "rgba(0,0,0,0)");
-    cx.fillStyle = halo; cx.fillRect(0, 0, W, H);
-    // puntos
+    var halo = cx.createRadialGradient(X, Y, 0, X, Y, escala * 1.9);
+    halo.addColorStop(0, "rgba(" + col.join(",") + "," + (.07 + respira * .04 + energia * .07 + brillo * .14).toFixed(3) + ")");
+    halo.addColorStop(1, "rgba(0,0,0,0)"); cx.fillStyle = halo; cx.fillRect(0, 0, W, H);
     for (var i = 0; i < puntos.length; i++) {
-      var p = puntos[i];
-      var tx = cxm + (p.hx - cxm) * esc + Math.sin(t * 1.3 + p.fase) * (.4 + energia * 1.6);
-      var ty = cym + (p.hy - cym) * esc + Math.cos(t * 1.1 + p.fase) * (.4 + energia * 1.6) - respira * 2;
-      p.vx += (tx - p.x) * .045; p.vy += (ty - p.y) * .045; p.vx *= .82; p.vy *= .82; p.x += p.vx; p.y += p.vy;
-      var a = (.30 + p.peso * .75) * (.8 + respira * .2 + energia * .15 + brillo * .3);
+      var p = puntos[i]; p.th += p.deriva * (.15 + energia) * .05;
+      var rr = radio(p.th, t, energia) * p.rho * escala;
+      var tx = X + Math.cos(p.th) * rr + Math.sin(t * 1.2 + p.fase) * (.5 + energia * 1.5);
+      var ty = Y + Math.sin(p.th) * rr + Math.cos(t * 1.0 + p.fase) * (.5 + energia * 1.5);
+      if (mezcla > .002 && p.fx != null) {
+        var fxp = X + p.fx * escala * 1.05 + Math.sin(t * 1.5 + p.fase) * .6, fyp = Y + p.fy * escala * 1.05 + Math.cos(t * 1.3 + p.fase) * .6;
+        tx += (fxp - tx) * mezcla; ty += (fyp - ty) * mezcla;
+      }
+      p.vx += (tx - p.x) * .05; p.vy += (ty - p.y) * .05; p.vx *= .82; p.vy *= .82; p.x += p.vx; p.y += p.vy;
+      var nucleo = 1 - p.rho;                                    // más luz al centro, puntos finos en la orilla
+      var a = (.25 + nucleo * .35 + (p.rho > .85 ? .25 : 0)) * (.75 + respira * .25 + energia * .2 + brillo * .3);
       cx.fillStyle = "rgba(" + col[0] + "," + col[1] + "," + col[2] + "," + Math.min(1, a).toFixed(3) + ")";
-      var r = p.r * (1 + hablaOnda * .35 * p.peso);
+      var r = p.r * (1 + voz * .4);
       cx.fillRect(p.x - r / 2, p.y - r / 2, r, r);
     }
-    // letras flotando
     cx.textAlign = "center"; cx.textBaseline = "middle";
     for (var j = letras.length - 1; j >= 0; j--) {
-      var l = letras[j];
-      if (l.retardo > 0) { l.retardo--; continue; }
-      if (l.volver) { l.x += (cxm - l.x) * .12; l.y += (cym - l.y) * .12; l.vida -= .06; }
+      var l = letras[j]; if (l.retardo > 0) { l.retardo--; continue; }
+      if (l.volver) { l.x += (X - l.x) * .12; l.y += (Y - l.y) * .12; l.vida -= .06; }
       else { l.x += l.vx + Math.sin(t * 2 + l.t) * .2; l.y += l.vy; l.vida -= est === "escuchando" ? .0045 : .012; }
       if (l.vida <= 0) { letras.splice(j, 1); continue; }
       cx.font = (12 + l.t * 1.4).toFixed(0) + "px ui-monospace,Menlo,monospace";
-      cx.fillStyle = "rgba(255,226,180," + (l.vida * .85).toFixed(3) + ")";
-      cx.fillText(l.ch, l.x, l.y);
+      cx.fillStyle = "rgba(255,226,180," + (l.vida * .85).toFixed(3) + ")"; cx.fillText(l.ch, l.x, l.y);
     }
-    // destello de la cifra registrada
     for (var k = destellos.length - 1; k >= 0; k--) {
       var d = destellos[k]; d.vida -= .008; if (d.vida <= 0) { destellos.splice(k, 1); continue; }
-      cx.font = "600 " + Math.round(escala * .13) + "px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";
+      cx.font = "600 " + Math.round(R * .38) + "px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";
       cx.fillStyle = "rgba(255,240,215," + Math.min(1, d.vida * 2).toFixed(3) + ")";
-      cx.fillText(d.txt, cxm, cym - escala * .52 - (1 - d.vida) * 30);
+      cx.fillText(d.txt, X, Y - R * 1.55 - (1 - d.vida) * 30);
     }
   }
   requestAnimationFrame(cuadro);
@@ -1371,9 +1422,9 @@ function teclear(k) {
 var arrancado = false;
 function arrancar() {
   if (arrancado) return; arrancado = true;
-  pintarTodo(); pintarAjustes(); estado(ajustes.manos && !esIOS ? "atento" : "dormido");
+  pintarTodo(); pintarAjustes(); pintarNombre(); estado(ajustes.manos && !esIOS ? "atento" : "dormido");
   var h = new Date().getHours();
-  $("burbuja").innerHTML = (h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches") + ", César.<small>" + (esIOS ? "Tócame y cuéntame qué pasó hoy." : ajustes.manos ? "Di «Chelsea» y te escucho." : "Tócame para hablar. Desliza hacia arriba para ver tus números.") + "</small>";
+  $("burbuja").innerHTML = (h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches") + ", César.<small>" + (esIOS ? "Toca el orbe y cuéntame qué pasó hoy." : ajustes.manos ? "Di «" + NOMBRE() + "» y te escucho." : "Toca el orbe para hablar. Desliza hacia arriba para ver tus números.") + "</small>";
   programarAvisos(); revisarAvisos(); vaciarCola();
   setTimeout(function () { if (claveSheets()) traerDeSheets(true); }, 1200);
   if (ajustes.manos && !esIOS) setTimeout(iniciarEscucha, 600);
